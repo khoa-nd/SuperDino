@@ -38,7 +38,7 @@ async function request<T>(payload: Record<string, unknown>): Promise<T> {
 }
 
 export const superdinoApi = {
-  login: (input: { username: string; role: UserRole; familyCode?: string }) =>
+  login: (input: { username: string; role: UserRole; password?: string; familyCode?: string }) =>
     request<AppSnapshot>({ action: 'login', ...input }),
 
   snapshot: (userId: string) =>
@@ -50,19 +50,34 @@ export const superdinoApi = {
   createWish: (input: { userId: string; data: Omit<Wish, 'id' | 'familyId' | 'createdAt'> }) =>
     request<AppSnapshot>({ action: 'createWish', ...input }),
 
+  submitCustomWish: (input: { userId: string; taskName: string; emoji: string; suggestedReward: number }) =>
+    request<AppSnapshot>({ action: 'submitCustomWish', ...input }),
+
+  convertWish: (input: { userId: string; wishId: string }) =>
+    request<AppSnapshot>({ action: 'convertWish', ...input }),
+
   logTask: (input: { userId: string; taskId: string }) =>
     request<AppSnapshot & { earned?: { amount: number; taskName: string } }>({ action: 'logTask', ...input }),
+
+  assignTask: (input: { userId: string; taskId: string; assignToUserId: string }) =>
+    request<AppSnapshot>({ action: 'assignTask', ...input }),
+
+  completeAssignedTask: (input: { userId: string; logId: string }) =>
+    request<AppSnapshot>({ action: 'completeAssignedTask', ...input }),
+
+  logCustomTask: (input: { userId: string; taskName: string; emoji: string; suggestedReward: number }) =>
+    request<AppSnapshot>({ action: 'logCustomTask', ...input }),
 
   submitWish: (input: { userId: string; wishId: string }) =>
     request<AppSnapshot>({ action: 'submitWish', ...input }),
 
-  approveTask: (input: { userId: string; logId: string }) =>
+  approveTask: (input: { userId: string; logId: string; amount?: number }) =>
     request<AppSnapshot>({ action: 'approveTask', ...input }),
 
   rejectTask: (input: { userId: string; logId: string }) =>
     request<AppSnapshot>({ action: 'rejectTask', ...input }),
 
-  approveWish: (input: { userId: string; requestId: string }) =>
+  approveWish: (input: { userId: string; requestId: string; amount?: number }) =>
     request<AppSnapshot>({ action: 'approveWish', ...input }),
 
   rejectWish: (input: { userId: string; requestId: string }) =>

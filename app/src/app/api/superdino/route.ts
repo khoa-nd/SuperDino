@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdmin } from '@/lib/supabase-server';
-import type { Family, Task, TaskCategory, TaskLog, TaskLogStatus, Transaction, User, UserRole, Wish, WishRequest, WishRequestStatus } from '@/types';
+import { createHash } from 'crypto';
+import type { Family, Task, TaskCategory, TaskLog, TaskLogStatus, Transaction, User, UserRole, Wish, WishCategory, WishRequest, WishRequestStatus } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,18 +17,18 @@ const STARTER_TASKS: Omit<Task, 'id' | 'familyId' | 'createdAt'>[] = [
 ];
 
 const STARTER_WISHES: Omit<Wish, 'id' | 'familyId' | 'createdAt'>[] = [
-  { name: 'Movie night', emoji: '🎬', cost: 12, color: 'oklch(0.92 0.07 280)' },
-  { name: 'Ice cream trip', emoji: '🍦', cost: 8, color: 'oklch(0.94 0.07 30)' },
-  { name: 'New book', emoji: '📖', cost: 20, color: 'oklch(0.92 0.07 145)' },
-  { name: 'Park playdate', emoji: '🛝', cost: 15, color: 'oklch(0.93 0.07 90)' },
-  { name: 'Stay up late', emoji: '🌙', cost: 10, color: 'oklch(0.92 0.06 240)' },
-  { name: 'Pick dinner', emoji: '🍕', cost: 6, color: 'oklch(0.94 0.07 60)' },
+  { name: 'Movie night', emoji: '🎬', cost: 12, category: 'normal', color: 'oklch(0.92 0.07 280)' },
+  { name: 'Ice cream trip', emoji: '🍦', cost: 8, category: 'normal', color: 'oklch(0.94 0.07 30)' },
+  { name: 'New book', emoji: '📖', cost: 20, category: 'normal', color: 'oklch(0.92 0.07 145)' },
+  { name: 'Park playdate', emoji: '🛝', cost: 15, category: 'normal', color: 'oklch(0.93 0.07 90)' },
+  { name: 'Stay up late', emoji: '🌙', cost: 10, category: 'normal', color: 'oklch(0.92 0.06 240)' },
+  { name: 'Pick dinner', emoji: '🍕', cost: 6, category: 'normal', color: 'oklch(0.94 0.07 60)' },
 ];
 
 type DbFamily = { id: string; name: string; code: string; created_at: string };
-type DbProfile = { id: string; username: string; name: string; role: UserRole; family_id: string | null; created_at: string };
+type DbProfile = { id: string; username: string; name: string; role: UserRole; family_id: string | null; password_hash: string | null; created_at: string };
 type DbTask = { id: string; name: string; emoji: string; reward: number; category: TaskCategory; auto_approve: boolean; color: string; family_id: string; created_at: string };
-type DbWish = { id: string; name: string; emoji: string; cost: number; color: string; family_id: string; created_at: string };
+type DbWish = { id: string; name: string; emoji: string; cost: number; category?: WishCategory; color: string; family_id: string; created_at: string };
 type DbTaskLog = { id: string; task_id: string; user_id: string; status: TaskLogStatus; timestamp: string };
 type DbWishRequest = { id: string; wish_id: string; user_id: string; status: WishRequestStatus; timestamp: string };
 type DbTransaction = { id: string; user_id: string; type: 'earn' | 'spend'; amount: number; label: string; timestamp: string };
@@ -36,18 +37,36 @@ type RequestPayload = {
   action?: string;
   userId?: string;
   username?: string;
+  password?: string;
   role?: UserRole;
   familyCode?: string;
   taskId?: string;
   wishId?: string;
   logId?: string;
   requestId?: string;
+  assignToUserId?: string;
+  taskName?: string;
+  emoji?: string;
+  suggestedReward?: number;
+  amount?: number;
   data?: Partial<Task & Wish>;
 };
 
 const id = () => `${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36)}`;
 
+const hashPassword = (password: string, username: string) =>
+  createHash('sha256').update(`superdino-${username}-${password}`).digest('hex');
+
 const normalizeUsername = (username: string) => username.trim().toLowerCase();
+
+const getChildBalance = async (db: ReturnType<typeof createSupabaseAdmin>, userId: string): Promise<number> => {
+  const { data, error } = await db
+    .from('transactions')
+    .select('amount, type')
+    .eq('user_id', userId);
+  if (error) throw new Error(error.message);
+  return (data || []).reduce((sum, tx) => sum + (tx.type === 'earn' ? tx.amount : -tx.amount), 0);
+};
 
 const toNiceName = (username: string) =>
   username
@@ -93,6 +112,7 @@ const mapWish = (wish: DbWish): Wish => ({
   name: wish.name,
   emoji: wish.emoji,
   cost: wish.cost,
+  category: wish.category || 'normal',
   color: wish.color,
   familyId: wish.family_id,
   createdAt: wish.created_at,
@@ -158,6 +178,7 @@ async function ensureDefaultFamily(db: ReturnType<typeof createSupabaseAdmin>) {
       name: wish.name,
       emoji: wish.emoji,
       cost: wish.cost,
+      category: wish.category,
       color: wish.color,
       family_id: 'f1',
     })));
@@ -181,6 +202,7 @@ async function seedCatalog(db: ReturnType<typeof createSupabaseAdmin>, familyId:
     name: wish.name,
     emoji: wish.emoji,
     cost: wish.cost,
+    category: wish.category,
     color: wish.color,
     family_id: familyId,
   })));
@@ -249,34 +271,61 @@ async function login(db: ReturnType<typeof createSupabaseAdmin>, payload: Reques
     .maybeSingle();
   if (error) throw new Error(error.message);
 
-  let familyId = (existingUser as DbProfile | null)?.family_id || null;
+  const profile = existingUser as DbProfile | null;
+
+  // Password check
+  if (profile?.password_hash) {
+    if (!payload.password?.trim()) throw new Error('Password is required');
+    const providedHash = hashPassword(payload.password, username);
+    if (providedHash !== profile.password_hash) throw new Error('Invalid password');
+  }
+
+  let familyId = profile?.family_id || null;
 
   if (payload.role === 'parent' && !familyId) {
-    familyId = id();
-    await db.from('families').insert({ id: familyId, name: `${name}'s family`, code: createFamilyCode(familyId) });
-    await seedCatalog(db, familyId);
+    if (payload.familyCode?.trim()) {
+      // Join existing family
+      const family = await getSingle<DbFamily>(
+        db.from('families').select('*').ilike('code', payload.familyCode.trim()).single(),
+        'Family code not found'
+      );
+      familyId = family.id;
+    } else {
+      // Create new family
+      familyId = id();
+      await db.from('families').insert({ id: familyId, name: `${name}'s family`, code: createFamilyCode(familyId) });
+      await seedCatalog(db, familyId);
+    }
   }
 
   if (payload.role === 'child') {
-    if (!payload.familyCode?.trim()) throw new Error('Family code is required for kid accounts');
-    const family = await getSingle<DbFamily>(
-      db.from('families').select('*').ilike('code', payload.familyCode.trim()).single(),
-      'Family code not found'
-    );
-    familyId = family.id;
+    if (!familyId) {
+      if (!payload.familyCode?.trim()) throw new Error('Family code is required for new kid accounts');
+      const family = await getSingle<DbFamily>(
+        db.from('families').select('*').ilike('code', payload.familyCode.trim()).single(),
+        'Family code not found'
+      );
+      familyId = family.id;
+    }
   }
 
-  const profile = existingUser as DbProfile | null;
+  // Require password for new users
+  if (!profile && !payload.password?.trim()) throw new Error('Password is required to create an account');
+
   const userId = profile?.id || id();
+  const upsertData: Record<string, unknown> = {
+    id: userId,
+    username,
+    name,
+    role: payload.role,
+    family_id: familyId,
+  };
+  if (!profile) {
+    upsertData.password_hash = hashPassword(payload.password!, username);
+  }
   const upserted = await getSingle<DbProfile>(
     db.from('profiles')
-      .upsert({
-        id: userId,
-        username,
-        name,
-        role: payload.role,
-        family_id: familyId,
-      }, { onConflict: 'username,role' })
+      .upsert(upsertData, { onConflict: 'username,role' })
       .select()
       .single(),
     'Unable to save user'
@@ -337,9 +386,82 @@ export async function POST(request: Request) {
         name: payload.data.name,
         emoji: payload.data.emoji,
         cost: payload.data.cost || 0,
+        category: (payload.data as Wish).category || 'normal',
         color: payload.data.color || 'oklch(0.92 0.06 240)',
         family_id: familyId,
       });
+      return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
+    }
+
+    if (action === 'submitCustomWish') {
+      if (!payload.taskName?.trim() || !payload.emoji) throw new Error('Wish name and emoji are required');
+      const cost = Math.max(1, Math.min(50, Number(payload.suggestedReward) || 5));
+      const customWishId = id();
+      await db.from('wishes').insert({
+        id: customWishId,
+        name: payload.taskName.trim(),
+        emoji: payload.emoji,
+        cost,
+        category: 'other',
+        color: 'oklch(0.92 0.06 280)',
+        family_id: familyId,
+      });
+      await db.from('wish_requests').insert({
+        id: id(),
+        wish_id: customWishId,
+        user_id: payload.userId,
+        status: 'pending',
+      });
+      return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
+    }
+
+    if (action === 'convertWish') {
+      if (!payload.wishId) throw new Error('wishId is required');
+      await db.from('wishes').update({ category: 'normal' }).eq('id', payload.wishId);
+      return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
+    }
+
+    if (action === 'logCustomTask') {
+      if (!payload.taskName?.trim() || !payload.emoji) throw new Error('Task name and emoji are required');
+      const reward = Math.max(1, Math.min(10, Number(payload.suggestedReward) || 3));
+      const customTaskId = id();
+      await db.from('tasks').insert({
+        id: customTaskId,
+        name: payload.taskName.trim(),
+        emoji: payload.emoji,
+        reward,
+        category: 'other',
+        auto_approve: false,
+        color: 'oklch(0.92 0.06 280)',
+        family_id: familyId,
+      });
+      await db.from('task_logs').insert({
+        id: id(),
+        task_id: customTaskId,
+        user_id: payload.userId,
+        status: 'pending',
+      });
+      return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
+    }
+
+    if (action === 'assignTask') {
+      if (!payload.taskId || !payload.assignToUserId) throw new Error('taskId and assignToUserId are required');
+      const task = snapshot.tasks.find((item) => item.id === payload.taskId);
+      if (!task) throw new Error('Task not found in this family');
+      await db.from('task_logs').insert({
+        id: id(),
+        task_id: task.id,
+        user_id: payload.assignToUserId,
+        status: 'assigned',
+      });
+      return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
+    }
+
+    if (action === 'completeAssignedTask') {
+      if (!payload.logId) throw new Error('logId is required');
+      const log = snapshot.taskLogs.find((item) => item.id === payload.logId);
+      if (!log || log.status !== 'assigned') throw new Error('Task log not found or not assigned');
+      await db.from('task_logs').update({ status: 'pending' }).eq('id', payload.logId);
       return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
     }
 
@@ -364,7 +486,8 @@ export async function POST(request: Request) {
       if (!payload.wishId) throw new Error('wishId is required');
       const wish = snapshot.wishes.find((item) => item.id === payload.wishId);
       if (!wish) throw new Error('Wish not found in this family');
-      if (snapshot.eggs < wish.cost) throw new Error('Not enough eggs for this wish');
+      const childBalance = await getChildBalance(db, payload.userId);
+      if (childBalance < wish.cost) throw new Error(`Not enough eggs — you have ${childBalance}, need ${wish.cost}`);
       await db.from('wish_requests').insert({ id: id(), wish_id: wish.id, user_id: payload.userId, status: 'pending' });
       return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
     }
@@ -377,7 +500,8 @@ export async function POST(request: Request) {
         const log = snapshot.taskLogs.find((item) => item.id === payload.logId);
         const task = log ? snapshot.tasks.find((item) => item.id === log.taskId) : null;
         if (log && task) {
-          await db.from('transactions').insert({ id: id(), user_id: log.userId, type: 'earn', amount: task.reward, label: task.name });
+          const reward = payload.amount != null ? Number(payload.amount) : task.reward;
+          await db.from('transactions').insert({ id: id(), user_id: log.userId, type: 'earn', amount: reward, label: task.name });
         }
       }
       return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
@@ -391,7 +515,12 @@ export async function POST(request: Request) {
         const wishRequest = snapshot.wishRequests.find((item) => item.id === payload.requestId);
         const wish = wishRequest ? snapshot.wishes.find((item) => item.id === wishRequest.wishId) : null;
         if (wishRequest && wish) {
-          await db.from('transactions').insert({ id: id(), user_id: wishRequest.userId, type: 'spend', amount: wish.cost, label: wish.name });
+          const amount = payload.amount != null ? Number(payload.amount) : wish.cost;
+          const childBalance = await getChildBalance(db, wishRequest.userId);
+          if (childBalance < amount) {
+            throw new Error(`Child only has ${childBalance} eggs — not enough (needs ${amount})`);
+          }
+          await db.from('transactions').insert({ id: id(), user_id: wishRequest.userId, type: 'spend', amount, label: wish.name });
         }
       }
       return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });

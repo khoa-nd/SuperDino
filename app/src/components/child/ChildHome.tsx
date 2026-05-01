@@ -8,12 +8,11 @@ import type { ActivityItem } from '@/types';
 interface ChildHomeProps {
   onLogTask: () => void;
   onWishes: () => void;
-  onSwitchRole: () => void;
   onLogout: () => void;
 }
 
-export function ChildHome({ onLogTask, onWishes, onSwitchRole, onLogout }: ChildHomeProps) {
-  const { user, users, activeChildId, eggs, tasks, taskLogs, wishRequests, wishes, transactions, streak, justEarned } = useStore();
+export function ChildHome({ onLogTask, onWishes, onLogout }: ChildHomeProps) {
+  const { user, users, activeChildId, eggs, tasks, taskLogs, wishRequests, wishes, transactions, streak, justEarned, refreshFromDb } = useStore();
   const dinoMood = justEarned ? 'cheer' : 'happy';
   const familyId = user?.familyId || 'f1';
   const currentChild = user?.role === 'child'
@@ -26,6 +25,10 @@ export function ChildHome({ onLogTask, onWishes, onSwitchRole, onLogout }: Child
   const childTaskLogs = childId ? taskLogs.filter((log) => log.userId === childId) : [];
   const childWishRequests = childId ? wishRequests.filter((req) => req.userId === childId) : [];
   const childTransactions = childId ? transactions.filter((tx) => tx.userId === childId) : [];
+
+  // Assigned tasks
+  const assignedLogs = childTaskLogs.filter((l) => l.status === 'assigned');
+  const assignedCount = assignedLogs.length;
 
   // Combine task logs and wish requests for history
   const taskItems: ActivityItem[] = childTaskLogs.map((log) => {
@@ -75,15 +78,15 @@ export function ChildHome({ onLogTask, onWishes, onSwitchRole, onLogout }: Child
           <div className="font-display font-bold text-lg text-sd-ink">{currentChild?.name || 'Friend'} 👋</div>
         </div>
         <button
-          onClick={onSwitchRole}
-          title="Switch to parent"
+          onClick={() => refreshFromDb()}
+          title="Reload"
           className="
             border-none bg-sd-coral-lt text-sd-coral-dk
             font-display font-bold text-[11px]
             px-3 py-2 rounded-full cursor-pointer tracking-wider
           "
         >
-          👤 PARENT
+          ↻
         </button>
         <button
           onClick={onLogout}
@@ -153,6 +156,32 @@ export function ChildHome({ onLogTask, onWishes, onSwitchRole, onLogout }: Child
           ⭐ Wishes
         </Stamp>
       </div>
+
+      {/* Assigned tasks prompt */}
+      {assignedCount > 0 && (
+        <div className="px-4 pb-1">
+          <div
+            onClick={onLogTask}
+            className="
+              rounded-[22px] p-3.5 cursor-pointer
+              bg-sd-coral-lt border-2 border-sd-coral/30
+              flex items-center gap-3
+              shadow-[0_2px_0_rgba(180,80,80,0.15)]
+            "
+          >
+            <div className="text-2xl">📋</div>
+            <div className="flex-1">
+              <div className="font-display font-bold text-sm text-sd-coral-dk">
+                {assignedCount} task{assignedCount > 1 ? 's' : ''} assigned by parent
+              </div>
+              <div className="font-body text-xs text-sd-coral-dk/70 mt-0.5">
+                Tap to view and mark as done
+              </div>
+            </div>
+            <div className="font-display font-bold text-xs text-sd-coral-dk">View ›</div>
+          </div>
+        </div>
+      )}
 
       {/* History */}
       <SectionTitle

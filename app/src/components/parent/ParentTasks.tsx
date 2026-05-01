@@ -6,23 +6,38 @@ import { useStore } from '@/lib/store';
 import { formatRelativeTime } from '@/lib/utils';
 
 interface ParentTasksProps {
-  onSwitchRole: () => void;
   onAddTask: () => void;
 }
 
-export function ParentTasks({ onSwitchRole, onAddTask }: ParentTasksProps) {
-  const { user, users, tasks, taskLogs, approveTask, rejectTask } = useStore();
-  const [tab, setTab] = useState<'pending' | 'manage'>('pending');
+export function ParentTasks({ onAddTask }: ParentTasksProps) {
+  const { user, users, tasks, taskLogs, approveTask, rejectTask, assignTask, refreshFromDb, loading } = useStore();
+  const [tab, setTab] = useState<'pending' | 'assigned' | 'manage'>('pending');
+  const [assignChildId, setAssignChildId] = useState<string | null>(null);
+  const [adjustingLogId, setAdjustingLogId] = useState<string | null>(null);
+  const [adjustAmount, setAdjustAmount] = useState(0);
   const familyId = user?.familyId || 'f1';
   const familyTasks = tasks.filter((task) => task.familyId === familyId);
   const linkedKids = users.filter((u) => u.role === 'child' && u.familyId === familyId);
   const linkedKidIds = linkedKids.map((kid) => kid.id);
   const childName = (userId: string) => linkedKids.find((kid) => kid.id === userId)?.name || 'Kid';
 
+  // Tasks to approve (pending logs)
   const pendingLogs = taskLogs.filter((log) => {
     if (log.status !== 'pending') return false;
     const task = familyTasks.find((t) => t.id === log.taskId);
-    return task && !task.autoApprove && linkedKidIds.includes(log.userId);
+    return task && linkedKidIds.includes(log.userId);
+  });
+
+  // Tasks assigned to kids, waiting for them to complete
+  const assignedLogs = taskLogs.filter((log) => {
+    if (log.status !== 'assigned') return false;
+    return linkedKidIds.includes(log.userId);
+  });
+
+  // Tasks available to assign (not already assigned)
+  const assignableTasks = familyTasks.filter((task) => {
+    if (task.category === 'other') return false;
+    return !taskLogs.some((l) => l.taskId === task.id && l.status === 'assigned' && l.userId === assignChildId);
   });
 
   return (
@@ -31,30 +46,33 @@ export function ParentTasks({ onSwitchRole, onAddTask }: ParentTasksProps) {
       <div className="px-4 py-3.5 pb-2 flex items-center gap-2.5">
         <div className="flex-1">
           <div className="font-display font-bold text-[26px] text-sd-ink leading-none">Tasks</div>
-          <div className="font-body text-sm text-sd-ink-soft mt-1">Approve and manage</div>
+          <div className="font-body text-sm text-sd-ink-soft mt-1">
+            {tab === 'pending' ? `Approve (${pendingLogs.length})` : tab === 'assigned' ? 'Assign to kids' : 'Manage catalog'}
+          </div>
         </div>
         <button
-          onClick={onSwitchRole}
+          onClick={() => refreshFromDb()}
           className="
             border-none bg-sd-green-lt text-sd-green-dk
             font-display font-bold text-[11px]
             px-3 py-2 rounded-full cursor-pointer tracking-wider
           "
         >
-          👶 KID
+          ↻
         </button>
       </div>
 
       {/* Tab toggle */}
       <div className="px-4 pb-2.5">
         <div className="bg-white rounded-full p-1 flex gap-1 border-2 border-[rgba(20,40,30,0.05)]">
-          {[
+          {([
             { key: 'pending' as const, label: `Pending (${pendingLogs.length})` },
+            { key: 'assigned' as const, label: `Assigned (${assignedLogs.length})` },
             { key: 'manage' as const, label: 'Manage' },
-          ].map((t) => (
+          ]).map((t) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => { setTab(t.key); setAssignChildId(null); }}
               className={`
                 flex-1 border-none cursor-pointer
                 py-2.5 rounded-full
@@ -68,7 +86,7 @@ export function ParentTasks({ onSwitchRole, onAddTask }: ParentTasksProps) {
         </div>
       </div>
 
-      {/* Content */}
+      {/* Pending tab */}
       {tab === 'pending' && (
         <div className="px-4 pb-4 flex flex-col gap-2.5">
           {pendingLogs.length === 0 && (
@@ -83,6 +101,66 @@ export function ParentTasks({ onSwitchRole, onAddTask }: ParentTasksProps) {
           {pendingLogs.map((log) => {
             const task = familyTasks.find((t) => t.id === log.taskId);
             if (!task) return null;
+            const isAdjusting = adjustingLogId === log.id;
+
+            const handleStartAdjust = () => {
+              setAdjustingLogId(log.id);
+              setAdjustAmount(task.reward);
+            };
+
+            const handleConfirmApprove = () => {
+              approveTask(log.id, adjustAmount);
+              setAdjustingLogId(null);
+            };
+
+            const handleCancelAdjust = () => {
+              setAdjustingLogId(null);
+              setAdjustAmount(0);
+            };
+
+            if (isAdjusting) {
+              return (
+                <div
+                  key={log.id}
+                  className="bg-white rounded-[22px] p-3.5 border-2 border-[rgba(20,40,30,0.05)] shadow-[0_2px_0_rgba(20,40,30,0.05)]"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className="w-[44px] h-[44px] rounded-xl flex items-center justify-center text-[22px]"
+                      style={{ background: task.color }}
+                    >
+                      {task.emoji}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-display font-bold text-base text-sd-ink">{task.name}</div>
+                      <div className="font-body text-xs text-sd-ink-soft mt-0.5">
+                        {childName(log.userId)} · {formatRelativeTime(log.timestamp)}
+                      </div>
+                    </div>
+                    <div className="bg-sd-egg-lt rounded-xl p-2.5 flex items-center gap-1.5">
+                      <Egg size={14} />
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={adjustAmount}
+                        onChange={(e) => setAdjustAmount(Math.max(1, Number(e.target.value)))}
+                        className="w-[44px] border-none bg-transparent font-display font-bold text-xl text-sd-egg-dk text-center outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Stamp color="paper" size="sm" block loading={loading} onClick={handleCancelAdjust}>
+                      Cancel
+                    </Stamp>
+                    <Stamp color="green" size="sm" block loading={loading} onClick={handleConfirmApprove}>
+                      ✓ Approve {adjustAmount !== task.reward ? `(${adjustAmount > task.reward ? '+' : ''}${adjustAmount - task.reward})` : ''}
+                    </Stamp>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={log.id}
@@ -104,10 +182,10 @@ export function ParentTasks({ onSwitchRole, onAddTask }: ParentTasksProps) {
                   <EggBadge count={`+${task.reward}`} size={14} />
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <Stamp color="paper" size="sm" block onClick={() => rejectTask(log.id)} className="text-sd-coral-dk">
+                  <Stamp color="paper" size="sm" block loading={loading} onClick={() => rejectTask(log.id)} className="text-sd-coral-dk">
                     ✕ Reject
                   </Stamp>
-                  <Stamp color="green" size="sm" block onClick={() => approveTask(log.id)}>
+                  <Stamp color="green" size="sm" block loading={loading} onClick={handleStartAdjust}>
                     ✓ Approve
                   </Stamp>
                 </div>
@@ -117,6 +195,128 @@ export function ParentTasks({ onSwitchRole, onAddTask }: ParentTasksProps) {
         </div>
       )}
 
+      {/* Assigned tab */}
+      {tab === 'assigned' && (
+        <div className="px-4 pb-4 flex flex-col gap-2.5">
+          {/* Child picker for assignment */}
+          <div className="flex gap-1.5 mb-1">
+            {(linkedKids.length > 0 ? linkedKids : [{ id: 'all', name: 'All', role: 'child' as const, username: '', createdAt: '' }]).map((kid) => (
+              <button
+                key={kid.id}
+                onClick={() => setAssignChildId(kid.id === 'all' ? null : kid.id)}
+                className={`
+                  border-none cursor-pointer whitespace-nowrap
+                  px-3.5 py-2 rounded-full
+                  font-display font-bold text-sm
+                  ${assignChildId === kid.id || (assignChildId === null && kid.id === 'all')
+                    ? 'bg-sd-ink text-white'
+                    : 'bg-white text-sd-ink shadow-[inset_0_0_0_2px_rgba(20,40,30,0.06)]'
+                  }
+                `}
+              >
+                {kid.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Waiting for child */}
+          {assignedLogs.length > 0 && (
+            <div className="mb-3">
+              <div className="font-display font-bold text-xs text-sd-ink-soft tracking-wider uppercase mb-1.5">
+                Waiting for kid
+              </div>
+              {assignedLogs.map((log) => {
+                const task = familyTasks.find((t) => t.id === log.taskId);
+                if (!task) return null;
+                return (
+                  <div
+                    key={log.id}
+                    className="bg-white rounded-[18px] p-3 flex items-center gap-3 border-2 border-[rgba(20,40,30,0.04)] mb-2"
+                  >
+                    <div
+                      className="w-[42px] h-[42px] rounded-[14px] flex items-center justify-center text-[22px]"
+                      style={{ background: task.color }}
+                    >
+                      {task.emoji}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-display font-bold text-sm text-sd-ink">{task.name}</div>
+                      <div className="font-body text-xs text-sd-ink-soft mt-0.5">
+                        {childName(log.userId)} · <Pill variant="egg">⏳ Waiting</Pill>
+                      </div>
+                    </div>
+                    <EggBadge count={`+${task.reward}`} size={14} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Assign new */}
+          {assignChildId && (
+            <>
+              <div className="font-display font-bold text-xs text-sd-ink-soft tracking-wider uppercase mb-1">
+                Pick a task to assign
+              </div>
+              {assignableTasks.map((task) => (
+                <Card
+                  key={task.id}
+                  className="flex items-center gap-3.5 p-3.5 cursor-pointer hover:border-sd-green transition-colors"
+                  onClick={() => assignTask(task.id, assignChildId)}
+                >
+                  <div
+                    className="w-[48px] h-[48px] rounded-2xl flex items-center justify-center text-[24px]"
+                    style={{ background: task.color }}
+                  >
+                    {task.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display font-bold text-sm text-sd-ink">{task.name}</div>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <span className="font-body text-[11px] text-sd-ink-mute font-semibold capitalize">
+                        {task.category}
+                      </span>
+                      {task.autoApprove ? (
+                        <Pill variant="green">⚡ Auto</Pill>
+                      ) : (
+                        <Pill variant="coral">👤 Approval</Pill>
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-sd-egg-lt rounded-xl py-1.5 px-2.5 flex items-center gap-1 font-display font-bold text-sm text-sd-egg-dk">
+                    <Egg size={14} /> {task.reward}
+                  </div>
+                </Card>
+              ))}
+              {assignableTasks.length === 0 && (
+                <Card className="text-center py-4">
+                  <div className="font-body text-sm text-sd-ink-mute">All tasks already assigned to this kid.</div>
+                </Card>
+              )}
+            </>
+          )}
+
+          {!assignChildId && linkedKids.length > 0 && (
+            <Card className="text-center py-5">
+              <div className="text-3xl mb-1">👆</div>
+              <div className="font-display font-bold text-sm text-sd-ink">Pick a kid first</div>
+              <div className="font-body text-xs text-sd-ink-soft mt-1">
+                Then choose a task to assign to them.
+              </div>
+            </Card>
+          )}
+
+          {linkedKids.length === 0 && (
+            <Card className="text-center py-4">
+              <div className="text-3xl mb-1">🦕</div>
+              <div className="font-display font-bold text-sm text-sd-ink">No kids in this family</div>
+              <div className="font-body text-xs text-sd-ink-soft mt-1">Add a kid account to assign tasks.</div>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Manage tab */}
       {tab === 'manage' && (
         <div className="px-4 pb-4 flex flex-col gap-2">
           {familyTasks.map((task) => (
@@ -144,6 +344,9 @@ export function ParentTasks({ onSwitchRole, onAddTask }: ParentTasksProps) {
                     <Pill variant="green">⚡ Auto</Pill>
                   ) : (
                     <Pill variant="coral">👤 Approval</Pill>
+                  )}
+                  {task.category === 'other' && (
+                    <Pill variant="coral">Custom</Pill>
                   )}
                 </div>
               </div>

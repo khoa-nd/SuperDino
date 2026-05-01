@@ -21,12 +21,12 @@ const INITIAL_TASKS: Task[] = [
 ];
 
 const INITIAL_WISH_CATALOG: Wish[] = [
-  { id: 'w1', name: 'Movie night', emoji: '🎬', cost: 12, color: 'oklch(0.92 0.07 280)', familyId: 'f1', createdAt: new Date().toISOString() },
-  { id: 'w2', name: 'Ice cream trip', emoji: '🍦', cost: 8, color: 'oklch(0.94 0.07 30)', familyId: 'f1', createdAt: new Date().toISOString() },
-  { id: 'w3', name: 'New book', emoji: '📖', cost: 20, color: 'oklch(0.92 0.07 145)', familyId: 'f1', createdAt: new Date().toISOString() },
-  { id: 'w4', name: 'Park playdate', emoji: '🛝', cost: 15, color: 'oklch(0.93 0.07 90)', familyId: 'f1', createdAt: new Date().toISOString() },
-  { id: 'w5', name: 'Stay up late', emoji: '🌙', cost: 10, color: 'oklch(0.92 0.06 240)', familyId: 'f1', createdAt: new Date().toISOString() },
-  { id: 'w6', name: 'Pick dinner', emoji: '🍕', cost: 6, color: 'oklch(0.94 0.07 60)', familyId: 'f1', createdAt: new Date().toISOString() },
+  { id: 'w1', name: 'Movie night', emoji: '🎬', cost: 12, category: 'normal', color: 'oklch(0.92 0.07 280)', familyId: 'f1', createdAt: new Date().toISOString() },
+  { id: 'w2', name: 'Ice cream trip', emoji: '🍦', cost: 8, category: 'normal', color: 'oklch(0.94 0.07 30)', familyId: 'f1', createdAt: new Date().toISOString() },
+  { id: 'w3', name: 'New book', emoji: '📖', cost: 20, category: 'normal', color: 'oklch(0.92 0.07 145)', familyId: 'f1', createdAt: new Date().toISOString() },
+  { id: 'w4', name: 'Park playdate', emoji: '🛝', cost: 15, category: 'normal', color: 'oklch(0.93 0.07 90)', familyId: 'f1', createdAt: new Date().toISOString() },
+  { id: 'w5', name: 'Stay up late', emoji: '🌙', cost: 10, category: 'normal', color: 'oklch(0.92 0.06 240)', familyId: 'f1', createdAt: new Date().toISOString() },
+  { id: 'w6', name: 'Pick dinner', emoji: '🍕', cost: 6, category: 'normal', color: 'oklch(0.94 0.07 60)', familyId: 'f1', createdAt: new Date().toISOString() },
 ];
 
 const INITIAL_FAMILIES: Family[] = [
@@ -141,7 +141,7 @@ interface AppState {
   // Actions
   setAuthStage: (stage: 'pick' | 'login' | 'done') => void;
   setPendingRole: (role: UserRole | null) => void;
-  login: (username: string, role: UserRole, options?: { familyCode?: string }) => void;
+  login: (username: string, role: UserRole, options?: { familyCode?: string; password?: string }) => void;
   logout: () => void;
   switchRole: () => void;
   setActiveChild: (childId: string) => void;
@@ -149,15 +149,20 @@ interface AppState {
 
   // Child actions
   logTask: (taskId: string) => void;
+  logCustomTask: (taskName: string, emoji: string, suggestedReward: number) => void;
+  completeAssignedTask: (logId: string) => void;
   submitWish: (wishId: string) => void;
+  submitCustomWish: (name: string, emoji: string, cost: number) => void;
 
   // Parent actions
-  approveTask: (logId: string) => void;
+  approveTask: (logId: string, amount?: number) => void;
   rejectTask: (logId: string) => void;
-  approveWish: (requestId: string) => void;
+  assignTask: (taskId: string, childId: string) => void;
+  approveWish: (requestId: string, amount?: number) => void;
   rejectWish: (requestId: string) => void;
   createTask: (data: Omit<Task, 'id' | 'familyId' | 'createdAt'>) => void;
   createWish: (data: Omit<Wish, 'id' | 'familyId' | 'createdAt'>) => void;
+  convertWishToNormal: (wishId: string) => void;
 
   // UI
   showToast: (message: string) => void;
@@ -195,7 +200,7 @@ export const useStore = create<AppState>()(
       login: async (username, role, options) => {
         set({ loading: true });
         try {
-          const snapshot = await superdinoApi.login({ username, role, familyCode: options?.familyCode });
+          const snapshot = await superdinoApi.login({ username, role, password: options?.password, familyCode: options?.familyCode });
           set({ ...snapshotToState(snapshot), loading: false });
         } catch (error) {
           set({ toast: getErrorMessage(error), loading: false });
@@ -264,6 +269,51 @@ export const useStore = create<AppState>()(
         }
       },
 
+      logCustomTask: async (taskName, emoji, suggestedReward) => {
+        const state = get();
+        const child = getChildUser(state);
+        if (!child) return;
+
+        set({ loading: true });
+        try {
+          const snapshot = await superdinoApi.logCustomTask({
+            userId: child.id,
+            taskName,
+            emoji,
+            suggestedReward,
+          });
+          set({
+            ...snapshotToState(snapshot),
+            loading: false,
+            toast: `Custom task "${taskName}" sent for approval ⏳`,
+          });
+          setTimeout(() => set({ toast: null }), 2000);
+        } catch (error) {
+          set({ toast: getErrorMessage(error), loading: false });
+          setTimeout(() => set({ toast: null }), 3500);
+        }
+      },
+
+      completeAssignedTask: async (logId) => {
+        const state = get();
+        const child = getChildUser(state);
+        if (!child) return;
+
+        set({ loading: true });
+        try {
+          const snapshot = await superdinoApi.completeAssignedTask({ userId: child.id, logId });
+          set({
+            ...snapshotToState(snapshot),
+            loading: false,
+            toast: 'Marked as done — waiting for parent approval ⏳',
+          });
+          setTimeout(() => set({ toast: null }), 2000);
+        } catch (error) {
+          set({ toast: getErrorMessage(error), loading: false });
+          setTimeout(() => set({ toast: null }), 3500);
+        }
+      },
+
       submitWish: async (wishId) => {
         const state = get();
         const child = getChildUser(state);
@@ -281,13 +331,34 @@ export const useStore = create<AppState>()(
         }
       },
 
+      submitCustomWish: async (name, emoji, cost) => {
+        const state = get();
+        const child = getChildUser(state);
+        if (!child) return;
+
+        set({ loading: true });
+        try {
+          const snapshot = await superdinoApi.submitCustomWish({
+            userId: child.id,
+            taskName: name,
+            emoji,
+            suggestedReward: cost,
+          });
+          set({ ...snapshotToState(snapshot), loading: false, toast: `New wish "${name}" sent for approval ✨` });
+          setTimeout(() => set({ toast: null }), 2000);
+        } catch (error) {
+          set({ toast: getErrorMessage(error), loading: false });
+          setTimeout(() => set({ toast: null }), 3500);
+        }
+      },
+
       // Parent actions
-      approveTask: async (logId) => {
+      approveTask: async (logId, amount) => {
         const state = get();
         if (!state.user) return;
         set({ loading: true });
         try {
-          const snapshot = await superdinoApi.approveTask({ userId: state.user.id, logId });
+          const snapshot = await superdinoApi.approveTask({ userId: state.user.id, logId, amount });
           set({ ...snapshotToState(snapshot), loading: false, justEarned: true });
           setTimeout(() => set({ justEarned: false }), 1500);
         } catch (error) {
@@ -309,12 +380,26 @@ export const useStore = create<AppState>()(
         }
       },
 
-      approveWish: async (requestId) => {
+      assignTask: async (taskId, childId) => {
         const state = get();
         if (!state.user) return;
         set({ loading: true });
         try {
-          const snapshot = await superdinoApi.approveWish({ userId: state.user.id, requestId });
+          const snapshot = await superdinoApi.assignTask({ userId: state.user.id, taskId, assignToUserId: childId });
+          set({ ...snapshotToState(snapshot), loading: false, toast: 'Task assigned to kid 📋' });
+          setTimeout(() => set({ toast: null }), 2000);
+        } catch (error) {
+          set({ toast: getErrorMessage(error), loading: false });
+          setTimeout(() => set({ toast: null }), 3500);
+        }
+      },
+
+      approveWish: async (requestId, amount) => {
+        const state = get();
+        if (!state.user) return;
+        set({ loading: true });
+        try {
+          const snapshot = await superdinoApi.approveWish({ userId: state.user.id, requestId, amount });
           set({ ...snapshotToState(snapshot), loading: false });
         } catch (error) {
           set({ toast: getErrorMessage(error), loading: false });
@@ -360,6 +445,20 @@ export const useStore = create<AppState>()(
         try {
           const snapshot = await superdinoApi.createWish({ userId: state.user.id, data });
           set({ ...snapshotToState(snapshot), loading: false, toast: `Wish "${data.name}" added to catalog ⭐` });
+          setTimeout(() => set({ toast: null }), 2000);
+        } catch (error) {
+          set({ toast: getErrorMessage(error), loading: false });
+          setTimeout(() => set({ toast: null }), 3500);
+        }
+      },
+
+      convertWishToNormal: async (wishId) => {
+        const state = get();
+        if (!state.user) return;
+        set({ loading: true });
+        try {
+          const snapshot = await superdinoApi.convertWish({ userId: state.user.id, wishId });
+          set({ ...snapshotToState(snapshot), loading: false, toast: 'Wish converted to catalog ⭐' });
           setTimeout(() => set({ toast: null }), 2000);
         } catch (error) {
           set({ toast: getErrorMessage(error), loading: false });

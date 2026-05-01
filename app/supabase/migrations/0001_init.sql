@@ -20,7 +20,7 @@ create table if not exists public.tasks (
   name text not null,
   emoji text not null,
   reward integer not null check (reward >= 0),
-  category text not null check (category in ('morning', 'home', 'school', 'kind')),
+  category text not null check (category in ('morning', 'home', 'school', 'kind', 'other')),
   auto_approve boolean not null default false,
   color text not null,
   family_id text not null references public.families(id) on delete cascade,
@@ -32,6 +32,7 @@ create table if not exists public.wishes (
   name text not null,
   emoji text not null,
   cost integer not null check (cost >= 0),
+  category text not null default 'normal' check (category in ('normal', 'other')),
   color text not null,
   family_id text not null references public.families(id) on delete cascade,
   created_at timestamptz not null default now()
@@ -41,7 +42,7 @@ create table if not exists public.task_logs (
   id text primary key,
   task_id text not null references public.tasks(id) on delete cascade,
   user_id text not null references public.profiles(id) on delete cascade,
-  status text not null check (status in ('pending', 'approved', 'auto-approved', 'rejected')),
+  status text not null check (status in ('assigned', 'pending', 'approved', 'auto-approved', 'rejected')),
   timestamp timestamptz not null default now()
 );
 
@@ -84,12 +85,12 @@ values
   ('t8', 'Be kind to bro', '💚', 3, 'kind', true, 'oklch(0.93 0.07 30)', 'f1')
 on conflict (id) do nothing;
 
-insert into public.wishes (id, name, emoji, cost, color, family_id)
+insert into public.wishes (id, name, emoji, cost, category, color, family_id)
 values
-  ('w1', 'Movie night', '🎬', 12, 'oklch(0.92 0.07 280)', 'f1'),
-  ('w2', 'Ice cream trip', '🍦', 8, 'oklch(0.94 0.07 30)', 'f1'),
-  ('w3', 'New book', '📖', 20, 'oklch(0.92 0.07 145)', 'f1'),
-  ('w4', 'Park playdate', '🛝', 15, 'oklch(0.93 0.07 90)', 'f1'),
-  ('w5', 'Stay up late', '🌙', 10, 'oklch(0.92 0.06 240)', 'f1'),
-  ('w6', 'Pick dinner', '🍕', 6, 'oklch(0.94 0.07 60)', 'f1')
+  ('w1', 'Movie night', '🎬', 12, 'normal', 'oklch(0.92 0.07 280)', 'f1'),
+  ('w2', 'Ice cream trip', '🍦', 8, 'normal', 'oklch(0.94 0.07 30)', 'f1'),
+  ('w3', 'New book', '📖', 20, 'normal', 'oklch(0.92 0.07 145)', 'f1'),
+  ('w4', 'Park playdate', '🛝', 15, 'normal', 'oklch(0.93 0.07 90)', 'f1'),
+  ('w5', 'Stay up late', '🌙', 10, 'normal', 'oklch(0.92 0.06 240)', 'f1'),
+  ('w6', 'Pick dinner', '🍕', 6, 'normal', 'oklch(0.94 0.07 60)', 'f1')
 on conflict (id) do nothing;

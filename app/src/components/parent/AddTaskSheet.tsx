@@ -21,7 +21,7 @@ const categories: { key: TaskCategory; label: string }[] = [
 ];
 
 export function AddTaskSheet({ onClose }: AddTaskSheetProps) {
-  const { createTask } = useStore();
+  const { createTask, loading } = useStore();
   const [emoji, setEmoji] = useState('🦷');
   const [name, setName] = useState('');
   const [reward, setReward] = useState(3);
@@ -140,7 +140,7 @@ export function AddTaskSheet({ onClose }: AddTaskSheetProps) {
           <Stamp color="paper" block onClick={onClose}>
             Cancel
           </Stamp>
-          <Stamp color="coral" block disabled={!name.trim()} onClick={handleCreate}>
+          <Stamp color="coral" block disabled={!name.trim()} loading={loading} onClick={handleCreate}>
             Create task
           </Stamp>
         </div>

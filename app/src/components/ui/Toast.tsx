@@ -23,7 +23,7 @@ export function Toast({ message, duration = 2000, onClose }: ToastProps) {
   return (
     <div
       className={`
-        fixed bottom-20 left-4 right-4 z-30
+        fixed bottom-20 left-4 right-4 z-50
         bg-sd-ink text-white
         px-4 py-3 rounded-2xl
         font-display font-semibold text-sm

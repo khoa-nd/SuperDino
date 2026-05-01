@@ -5,12 +5,10 @@ import { Egg, StatusPill } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { formatRelativeTime } from '@/lib/utils';
 
-interface ParentHistoryProps {
-  onSwitchRole: () => void;
-}
+interface ParentHistoryProps {}
 
-export function ParentHistory({ onSwitchRole }: ParentHistoryProps) {
-  const { user, users, tasks, taskLogs, wishes, wishRequests, transactions } = useStore();
+export function ParentHistory({}: ParentHistoryProps) {
+  const { user, users, tasks, taskLogs, wishes, wishRequests, transactions, refreshFromDb } = useStore();
   const [filter, setFilter] = useState<'all' | 'tasks' | 'wishes'>('all');
   const familyId = user?.familyId || 'f1';
   const linkedKids = users.filter((u) => u.role === 'child' && u.familyId === familyId);
@@ -67,14 +65,14 @@ export function ParentHistory({ onSwitchRole }: ParentHistoryProps) {
           <div className="font-body text-sm text-sd-ink-soft mt-1">The whole story</div>
         </div>
         <button
-          onClick={onSwitchRole}
+          onClick={() => refreshFromDb()}
           className="
             border-none bg-sd-green-lt text-sd-green-dk
             font-display font-bold text-[11px]
             px-3 py-2 rounded-full cursor-pointer tracking-wider
           "
         >
-          👶 KID
+          ↻
         </button>
       </div>
 

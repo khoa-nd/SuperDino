@@ -18,7 +18,7 @@ export interface Family {
   createdAt: string;
 }
 
-export type TaskCategory = 'morning' | 'home' | 'school' | 'kind';
+export type TaskCategory = 'morning' | 'home' | 'school' | 'kind' | 'other';
 
 export interface Task {
   id: string;
@@ -32,7 +32,7 @@ export interface Task {
   createdAt: string;
 }
 
-export type TaskLogStatus = 'pending' | 'approved' | 'auto-approved' | 'rejected';
+export type TaskLogStatus = 'assigned' | 'pending' | 'approved' | 'auto-approved' | 'rejected';
 
 export interface TaskLog {
   id: string;
@@ -43,11 +43,14 @@ export interface TaskLog {
   task?: Task; // Joined data
 }
 
+export type WishCategory = 'normal' | 'other';
+
 export interface Wish {
   id: string;
   name: string;
   emoji: string;
   cost: number;
+  category: WishCategory;
   color: string;
   familyId: string;
   createdAt: string;

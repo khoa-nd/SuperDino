@@ -31,7 +31,6 @@ export default function SuperDinoApp() {
     setPendingRole,
     login,
     logout,
-    switchRole,
     refreshFromDb,
     clearToast,
     clearCelebrate,
@@ -76,14 +75,8 @@ export default function SuperDinoApp() {
     setPendingRole(null);
   };
 
-  const handleLogin = (username: string, role: UserRole, options?: { familyCode?: string }) => {
+  const handleLogin = (username: string, role: UserRole, options?: { familyCode?: string; password?: string }) => {
     login(username, role, options);
-  };
-
-  const handleSwitchRole = () => {
-    switchRole();
-    setChildView('home');
-    setParentTab('home');
   };
 
   const handleLogout = () => {
@@ -116,7 +109,6 @@ export default function SuperDinoApp() {
           <ChildHome
             onLogTask={() => setChildView('tasks')}
             onWishes={() => setChildView('wishes')}
-            onSwitchRole={handleSwitchRole}
             onLogout={handleLogout}
           />
         );
@@ -138,7 +130,6 @@ export default function SuperDinoApp() {
       case 'home':
         screen = (
           <ParentDashboard
-            onSwitchRole={handleSwitchRole}
             onTab={setParentTab}
             onLogout={handleLogout}
           />
@@ -147,7 +138,6 @@ export default function SuperDinoApp() {
       case 'tasks':
         screen = (
           <ParentTasks
-            onSwitchRole={handleSwitchRole}
             onAddTask={() => setAddingTask(true)}
           />
         );
@@ -155,13 +145,12 @@ export default function SuperDinoApp() {
       case 'wishes':
         screen = (
           <ParentWishes
-            onSwitchRole={handleSwitchRole}
             onAddWish={() => setAddingWish(true)}
           />
         );
         break;
       case 'history':
-        screen = <ParentHistory onSwitchRole={handleSwitchRole} />;
+        screen = <ParentHistory />;
         break;
     }
     tabBar = <ParentTabBar tab={parentTab} onTab={setParentTab} />;

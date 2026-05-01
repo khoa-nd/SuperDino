@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Stamp, Pill, EggBadge, BackHeader } from '@/components/ui';
+import { Card, Stamp, Pill, EggBadge, BackHeader, Sheet, Egg, FormField } from '@/components/ui';
+import { TextInput } from '@/components/ui/FormField';
 import { useStore } from '@/lib/store';
 import type { TaskCategory } from '@/types';
 
@@ -17,24 +18,90 @@ const filters: { key: 'all' | TaskCategory; label: string }[] = [
   { key: 'kind', label: '💚 Kind' },
 ];
 
+const customEmojis = ['✨', '📝', '🎯', '💡', '🌟', '🎨', '💪', '🏆', '🎵', '🌱', '❤️', '📌'];
+
 export function ChildTasks({ onBack }: ChildTasksProps) {
-  const { user, users, activeChildId, tasks, taskLogs, logTask } = useStore();
+  const { user, users, activeChildId, tasks, taskLogs, logTask, logCustomTask, completeAssignedTask, loading } = useStore();
   const [filter, setFilter] = useState<'all' | TaskCategory>('all');
+  const [showCustom, setShowCustom] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customEmoji, setCustomEmoji] = useState('✨');
+  const [customReward, setCustomReward] = useState(3);
+
   const familyId = user?.familyId || 'f1';
   const currentChild = user?.role === 'child'
     ? user
     : users.find((u) => u.id === activeChildId && u.role === 'child' && u.familyId === familyId) ||
       users.find((u) => u.role === 'child' && u.familyId === familyId);
+  const childId = currentChild?.id;
   const familyTasks = tasks.filter((task) => task.familyId === familyId);
 
-  const filtered = filter === 'all' ? familyTasks : familyTasks.filter((t) => t.category === filter);
+  // Assigned tasks (parent-assigned, waiting for child to do)
+  const assignedLogs = taskLogs.filter(
+    (l) => l.status === 'assigned' && l.userId === childId
+  );
+
+  // Non-assigned tasks from catalog
+  const nonOtherTasks = familyTasks.filter((t) => t.category !== 'other');
+  const filtered = filter === 'all' ? nonOtherTasks : nonOtherTasks.filter((t) => t.category === filter);
 
   const isPending = (taskId: string) =>
-    taskLogs.some((l) => l.taskId === taskId && l.userId === currentChild?.id && l.status === 'pending');
+    taskLogs.some((l) => l.taskId === taskId && l.userId === childId && (l.status === 'pending'));
+
+  const handleCustomSubmit = () => {
+    if (!customName.trim()) return;
+    logCustomTask(customName.trim(), customEmoji, customReward);
+    setCustomName('');
+    setCustomEmoji('✨');
+    setCustomReward(3);
+    setShowCustom(false);
+  };
 
   return (
     <div className="flex-1 flex flex-col bg-sd-cream">
       <BackHeader title="Log a task" subtitle="Tap one when you finish it" onBack={onBack} />
+
+      {/* Assigned by parent section */}
+      {assignedLogs.length > 0 && (
+        <>
+          <div className="px-4 pb-1">
+            <div className="font-display font-bold text-xs text-sd-coral-dk tracking-wider uppercase mb-1">
+              📋 Assigned by parent
+            </div>
+          </div>
+          <div className="px-4 pb-3 flex flex-col gap-2">
+            {assignedLogs.map((log) => {
+              const task = familyTasks.find((t) => t.id === log.taskId);
+              if (!task) return null;
+              return (
+                <Card key={log.id} className="flex items-center gap-3.5 p-3.5 border-2 border-sd-coral-lt">
+                  <div
+                    className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center text-[26px]"
+                    style={{ background: task.color }}
+                  >
+                    {task.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display font-bold text-base text-sd-ink">{task.name}</div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <EggBadge count={`+${task.reward}`} size={14} />
+                      <Pill variant="coral">👤 Parent</Pill>
+                    </div>
+                  </div>
+                  <Stamp
+                    size="sm"
+                    color="coral"
+                    loading={loading}
+                    onClick={() => completeAssignedTask(log.id)}
+                  >
+                    Done
+                  </Stamp>
+                </Card>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* Filters */}
       <div className="px-4 flex gap-1.5 overflow-x-auto pb-1.5 hide-scrollbar">
@@ -86,6 +153,7 @@ export function ChildTasks({ onBack }: ChildTasksProps) {
                 size="sm"
                 color={pending ? 'paper' : 'green'}
                 disabled={pending}
+                loading={loading}
                 onClick={() => !pending && logTask(task.id)}
               >
                 {pending ? '…' : 'Log'}
@@ -93,7 +161,99 @@ export function ChildTasks({ onBack }: ChildTasksProps) {
             </Card>
           );
         })}
+
+        {/* Other custom task option */}
+        {filter === 'all' && (
+          <Card
+            className="flex items-center gap-3.5 p-3.5 cursor-pointer border-2 border-dashed border-[rgba(20,40,30,0.10)] hover:border-sd-coral transition-colors"
+            onClick={() => setShowCustom(true)}
+          >
+            <div className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center text-[26px] bg-sd-coral-lt">
+              ✨
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-display font-bold text-base text-sd-ink">Other</div>
+              <div className="font-body text-xs text-sd-ink-soft mt-0.5">Describe your own task</div>
+            </div>
+            <Pill variant="coral">👤 Approval</Pill>
+          </Card>
+        )}
+
+        {filtered.length === 0 && filter !== 'all' && (
+          <Card className="text-center py-4">
+            <div className="text-3xl mb-1">📭</div>
+            <div className="font-display font-bold text-sm text-sd-ink">No tasks here</div>
+            <div className="font-body text-xs text-sd-ink-soft mt-0.5">Try another category</div>
+          </Card>
+        )}
       </div>
+
+      {/* Custom task sheet */}
+      {showCustom && (
+        <Sheet onClose={() => setShowCustom(false)}>
+          <div className="px-5 pb-4">
+            <div className="font-display font-bold text-[22px] text-sd-ink mb-3">Describe your task</div>
+
+            <FormField label="Pick an emoji" className="mb-3.5">
+              <div className="grid grid-cols-6 gap-2">
+                {customEmojis.map((e) => (
+                  <button
+                    key={e}
+                    onClick={() => setCustomEmoji(e)}
+                    className={`
+                      border-none cursor-pointer aspect-square rounded-[14px] text-[22px]
+                      ${customEmoji === e
+                        ? 'bg-sd-coral-lt shadow-[inset_0_0_0_2px_var(--color-sd-coral)]'
+                        : 'bg-white shadow-[inset_0_0_0_2px_rgba(20,40,30,0.06)]'
+                      }
+                    `}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </FormField>
+
+            <FormField label="What did you do?" className="mb-3.5">
+              <TextInput
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                placeholder="e.g. Helped mom with groceries"
+              />
+            </FormField>
+
+            <FormField label="How many eggs?" className="mb-4">
+              <div className="bg-white rounded-[14px] p-3 border-2 border-[rgba(20,40,30,0.08)] flex items-center gap-2.5">
+                <Egg size={28} />
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={customReward}
+                  onChange={(e) => setCustomReward(Number(e.target.value))}
+                  className="flex-1 accent-sd-coral"
+                />
+                <div className="font-display font-bold text-2xl text-sd-egg-dk min-w-[30px] text-right">
+                  {customReward}
+                </div>
+              </div>
+            </FormField>
+
+            <div className="font-body text-xs text-sd-ink-mute mb-4 bg-sd-coral-lt p-3 rounded-[14px]">
+              👤 This custom task will need a parent's approval before you earn eggs.
+            </div>
+
+            <div className="flex gap-2.5">
+              <Stamp color="paper" block onClick={() => setShowCustom(false)}>
+                Cancel
+              </Stamp>
+              <Stamp color="coral" block disabled={!customName.trim()} loading={loading} onClick={handleCustomSubmit}>
+                Submit for approval
+              </Stamp>
+            </div>
+          </div>
+        </Sheet>
+      )}
     </div>
   );
 }

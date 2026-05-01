@@ -2,17 +2,17 @@
 
 import { Avatar, Card, Egg, EggBadge, SectionTitle, Stamp } from '@/components/ui';
 import { useStore } from '@/lib/store';
+import { useState } from 'react';
 import { formatRelativeTime } from '@/lib/utils';
 import type { ParentTab } from './ParentTabBar';
 
 interface ParentDashboardProps {
-  onSwitchRole: () => void;
   onTab: (tab: ParentTab) => void;
   onLogout: () => void;
 }
 
-export function ParentDashboard({ onSwitchRole, onTab, onLogout }: ParentDashboardProps) {
-  const { user, users, families, tasks, taskLogs, wishRequests, wishes, transactions, approveTask, rejectTask, approveWish, rejectWish } = useStore();
+export function ParentDashboard({ onTab, onLogout }: ParentDashboardProps) {
+  const { user, users, families, tasks, taskLogs, wishRequests, wishes, transactions, approveTask, rejectTask, approveWish, rejectWish, refreshFromDb, loading } = useStore();
   const familyId = user?.familyId || 'f1';
   const family = families.find((f) => f.id === familyId);
   const linkedKids = users.filter((u) => u.role === 'child' && u.familyId === familyId);
@@ -21,11 +21,11 @@ export function ParentDashboard({ onSwitchRole, onTab, onLogout }: ParentDashboa
   const familyWishes = wishes.filter((wish) => wish.familyId === familyId);
   const childName = (userId: string) => linkedKids.find((kid) => kid.id === userId)?.name || 'Kid';
 
-  // Only show tasks needing approval (pending + NOT auto-approve)
+  // Only show tasks needing approval
   const pendingLogs = taskLogs.filter((log) => {
     if (log.status !== 'pending') return false;
     const task = familyTasks.find((t) => t.id === log.taskId);
-    return task && !task.autoApprove && linkedKidIds.includes(log.userId);
+    return task && linkedKidIds.includes(log.userId);
   });
 
   const pendingWishes = wishRequests.filter((w) =>
@@ -54,14 +54,14 @@ export function ParentDashboard({ onSwitchRole, onTab, onLogout }: ParentDashboa
           </div>
         </div>
         <button
-          onClick={onSwitchRole}
+          onClick={() => refreshFromDb()}
           className="
             border-none bg-sd-green-lt text-sd-green-dk
             font-display font-bold text-[11px]
             px-3 py-2 rounded-full cursor-pointer tracking-wider
           "
         >
-          👶 KID
+          ↻
         </button>
         <button
           onClick={onLogout}
@@ -117,9 +117,9 @@ export function ParentDashboard({ onSwitchRole, onTab, onLogout }: ParentDashboa
             🔗
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-display font-bold text-sm text-sd-ink">Family code: {family?.code || 'DINO-F1'}</div>
-            <div className="font-body text-xs text-sd-ink-soft mt-0.5">
-              Linked kid{linkedKids.length !== 1 ? 's' : ''}: {linkedKids.map((kid) => kid.name).join(', ') || 'None yet'}
+            <div className="font-display font-bold text-sm text-sd-ink">Your Family Code: {family?.code || 'DINO-F1'}</div>
+            <div className="font-body font-bold text-xs text-sd-ink-soft mt-0.5">
+              Your children{linkedKids.length !== 1 ? 's' : ''}: {linkedKids.map((kid) => kid.name).join(', ') || 'None yet'}
             </div>
           </div>
         </Card>
@@ -153,17 +153,20 @@ export function ParentDashboard({ onSwitchRole, onTab, onLogout }: ParentDashboa
           const task = familyTasks.find((t) => t.id === log.taskId);
           if (!task) return null;
           return (
-            <ApprovalCard
-              key={log.id}
-              icon={task.emoji}
-              iconBg={task.color}
-              title={task.name}
-              subtitle={`${childName(log.userId)} · ${formatRelativeTime(log.timestamp)}`}
-              meta={<EggBadge count={`+${task.reward}`} size={14} />}
-              onApprove={() => approveTask(log.id)}
-              onReject={() => rejectTask(log.id)}
-              approveColor="green"
-            />
+              <ApprovalCard
+                key={log.id}
+                icon={task.emoji}
+                iconBg={task.color}
+                title={task.name}
+                subtitle={`${childName(log.userId)} · ${formatRelativeTime(log.timestamp)}`}
+                defaultAmount={task.reward}
+                meta={<EggBadge count={`+${task.reward}`} size={14} />}
+                onApprove={(amount) => approveTask(log.id, amount)}
+                onReject={() => rejectTask(log.id)}
+                approveColor="green"
+                allowAdjust
+                loading={loading}
+              />
           );
         })}
       </div>
@@ -194,17 +197,20 @@ export function ParentDashboard({ onSwitchRole, onTab, onLogout }: ParentDashboa
           const wish = familyWishes.find((w) => w.id === req.wishId);
           if (!wish) return null;
           return (
-            <ApprovalCard
-              key={req.id}
-              icon={wish.emoji}
-              iconBg={wish.color}
-              title={wish.name}
-              subtitle={`${childName(req.userId)} · ${formatRelativeTime(req.timestamp)}`}
-              meta={<EggBadge count={wish.cost} size={14} />}
-              onApprove={() => approveWish(req.id)}
-              onReject={() => rejectWish(req.id)}
-              approveColor="coral"
-            />
+              <ApprovalCard
+                key={req.id}
+                icon={wish.emoji}
+                iconBg={wish.color}
+                title={wish.name}
+                subtitle={`${childName(req.userId)} · ${formatRelativeTime(req.timestamp)}`}
+                defaultAmount={wish.cost}
+                meta={<EggBadge count={wish.cost} size={14} />}
+                onApprove={(amount) => approveWish(req.id, amount)}
+                onReject={() => rejectWish(req.id)}
+                approveColor="coral"
+                allowAdjust
+                loading={loading}
+              />
           );
         })}
       </div>
@@ -217,13 +223,65 @@ interface ApprovalCardProps {
   iconBg: string;
   title: string;
   subtitle: string;
+  defaultAmount: number;
   meta: React.ReactNode;
-  onApprove: () => void;
+  onApprove: (amount: number) => void;
   onReject: () => void;
   approveColor: 'green' | 'coral';
+  allowAdjust?: boolean;
+  loading?: boolean;
 }
 
-function ApprovalCard({ icon, iconBg, title, subtitle, meta, onApprove, onReject, approveColor }: ApprovalCardProps) {
+function ApprovalCard({ icon, iconBg, title, subtitle, defaultAmount, meta, onApprove, onReject, approveColor, allowAdjust, loading }: ApprovalCardProps) {
+  const [adjusting, setAdjusting] = useState(false);
+  const [adjustAmount, setAdjustAmount] = useState(defaultAmount);
+
+  const handleApproveClick = () => {
+    if (allowAdjust) {
+      setAdjusting(true);
+    } else {
+      onApprove(defaultAmount);
+    }
+  };
+
+  if (adjusting) {
+    return (
+      <div className="bg-white rounded-[22px] p-3.5 border-2 border-[rgba(20,40,30,0.05)] shadow-[0_2px_0_rgba(20,40,30,0.05)]">
+        <div className="flex items-center gap-3 mb-3">
+          <div
+            className="w-[44px] h-[44px] rounded-xl flex items-center justify-center text-[22px]"
+            style={{ background: iconBg }}
+          >
+            {icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-display font-bold text-base text-sd-ink">{title}</div>
+            <div className="font-body text-xs text-sd-ink-soft">{subtitle}</div>
+          </div>
+          <div className="bg-sd-egg-lt rounded-xl p-2.5 flex items-center gap-1.5">
+            <Egg size={14} />
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={adjustAmount}
+              onChange={(e) => setAdjustAmount(Math.max(1, Number(e.target.value)))}
+              className="w-[44px] border-none bg-transparent font-display font-bold text-xl text-sd-egg-dk text-center outline-none"
+            />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Stamp color="paper" size="sm" block loading={loading} onClick={() => { setAdjusting(false); setAdjustAmount(defaultAmount); }}>
+            Cancel
+          </Stamp>
+          <Stamp color={approveColor} size="sm" block loading={loading} onClick={() => onApprove(adjustAmount)}>
+            ✓ Approve {adjustAmount !== defaultAmount ? `(${adjustAmount > defaultAmount ? '+' : ''}${adjustAmount - defaultAmount})` : ''}
+          </Stamp>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-[22px] p-3.5 border-2 border-[rgba(20,40,30,0.05)] shadow-[0_2px_0_rgba(20,40,30,0.05)]">
       <div className="flex items-center gap-3">
@@ -240,10 +298,10 @@ function ApprovalCard({ icon, iconBg, title, subtitle, meta, onApprove, onReject
         {meta}
       </div>
       <div className="flex gap-2 mt-3">
-        <Stamp color="paper" size="sm" block onClick={onReject} className="text-sd-coral-dk">
+        <Stamp color="paper" size="sm" block loading={loading} onClick={onReject} className="text-sd-coral-dk">
           ✕ Reject
         </Stamp>
-        <Stamp color={approveColor} size="sm" block onClick={onApprove}>
+        <Stamp color={approveColor} size="sm" block loading={loading} onClick={handleApproveClick}>
           ✓ Approve
         </Stamp>
       </div>

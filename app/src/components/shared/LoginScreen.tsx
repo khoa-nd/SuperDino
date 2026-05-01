@@ -3,19 +3,22 @@
 import { useState } from 'react';
 import { Dino, Stamp, FormField } from '@/components/ui';
 import { TextInput } from '@/components/ui/FormField';
+import { useStore } from '@/lib/store';
 import type { UserRole } from '@/types';
 
 interface LoginScreenProps {
   role: UserRole;
   onBack: () => void;
-  onLogin: (username: string, role: UserRole, options?: { familyCode?: string }) => void;
+  onLogin: (username: string, role: UserRole, options?: { familyCode?: string; password?: string }) => void;
 }
 
 export function LoginScreen({ role, onBack, onLogin }: LoginScreenProps) {
+  const { loading } = useStore();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [familyCode, setFamilyCode] = useState('');
+  const [joinFamily, setJoinFamily] = useState(false);
 
   const isParent = role === 'parent';
   const canSubmit = username.trim().length >= 2 && password.length >= 3;
@@ -94,7 +97,7 @@ export function LoginScreen({ role, onBack, onLogin }: LoginScreenProps) {
             placeholder="••••••••"
           />
         </FormField>
-        {!isParent && (
+        {!isParent && mode === 'register' && (
           <FormField label="Parent family code">
             <TextInput
               value={familyCode}
@@ -103,11 +106,54 @@ export function LoginScreen({ role, onBack, onLogin }: LoginScreenProps) {
             />
           </FormField>
         )}
+        {isParent && mode === 'register' && (
+          <>
+            <div className="bg-white rounded-[14px] p-1 flex gap-1 border-2 border-[rgba(20,40,30,0.05)]">
+              {([false, true] as const).map((join) => (
+                <button
+                  key={String(join)}
+                  onClick={() => { setJoinFamily(join); setFamilyCode(''); }}
+                  className={`
+                    flex-1 border-none cursor-pointer
+                    py-2.5 rounded-full
+                    font-display font-bold text-xs
+                    transition-colors
+                    ${joinFamily === join
+                      ? 'bg-sd-ink text-white'
+                      : 'bg-transparent text-sd-ink-soft'
+                    }
+                  `}
+                >
+                  {join ? 'Join existing family' : 'Create new family'}
+                </button>
+              ))}
+            </div>
+            {joinFamily && (
+              <FormField label="Family code">
+                <TextInput
+                  value={familyCode}
+                  onChange={(e) => setFamilyCode(e.target.value)}
+                  placeholder="DINO-F1"
+                />
+              </FormField>
+            )}
+          </>
+        )}
       </div>
 
-      {!isParent && (
+      {!isParent && mode === 'register' && (
         <div className="font-body text-xs text-sd-ink-mute mt-3 leading-relaxed bg-white/60 rounded-[14px] px-3 py-2">
           Ask your parent for the code on their dashboard. Demo family code: <b>DINO-F1</b>.
+        </div>
+      )}
+      {isParent && mode === 'register' && joinFamily && (
+        <div className="font-body text-xs text-sd-ink-mute mt-3 leading-relaxed bg-white/60 rounded-[14px] px-3 py-2">
+          Enter the family code from the other parent's dashboard.
+        </div>
+      )}
+      {isParent && mode === 'register' && !joinFamily && (
+        <div className="font-body text-xs text-sd-ink-mute mt-3 leading-relaxed bg-white/60 rounded-[14px] px-3 py-2">
+          You'll create a brand new family. Share the code on your dashboard for the other parent to join.
         </div>
       )}
 
@@ -119,7 +165,8 @@ export function LoginScreen({ role, onBack, onLogin }: LoginScreenProps) {
         block
         size="lg"
         disabled={!canSubmit}
-        onClick={() => onLogin(username.trim() || (isParent ? 'Parent' : 'Mia'), role, { familyCode })}
+        loading={loading}
+        onClick={() => onLogin(username.trim() || (isParent ? 'Parent' : 'Mia'), role, { password, familyCode: isParent ? (joinFamily ? familyCode : '') : (mode === 'register' ? familyCode : '') })}
       >
         {mode === 'login' ? 'Log in' : 'Create account'}
       </Stamp>

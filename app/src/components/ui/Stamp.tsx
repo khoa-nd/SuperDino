@@ -10,6 +10,7 @@ interface StampProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'colo
   color?: StampColor;
   size?: StampSize;
   block?: boolean;
+  loading?: boolean;
 }
 
 const colorMap = {
@@ -70,21 +71,23 @@ export function Stamp({
   size = 'md',
   block = false,
   disabled = false,
+  loading = false,
   className,
   ...props
 }: StampProps) {
   const [pressed, setPressed] = useState(false);
   const colors = colorMap[color];
   const sizes = sizeMap[size];
+  const isDisabled = disabled || loading;
 
   return (
     <button
       {...props}
-      disabled={disabled}
-      onMouseDown={() => setPressed(true)}
+      disabled={isDisabled}
+      onMouseDown={() => { if (!isDisabled) setPressed(true); }}
       onMouseUp={() => setPressed(false)}
       onMouseLeave={() => setPressed(false)}
-      onTouchStart={() => setPressed(true)}
+      onTouchStart={() => { if (!isDisabled) setPressed(true); }}
       onTouchEnd={() => setPressed(false)}
       className={cn(
         'inline-flex items-center justify-center gap-2',
@@ -97,7 +100,7 @@ export function Stamp({
         sizes.text,
         sizes.radius,
         block && 'flex w-full',
-        disabled && 'opacity-50 cursor-not-allowed',
+        isDisabled && 'opacity-50 cursor-not-allowed',
         className
       )}
       style={{
@@ -109,7 +112,17 @@ export function Stamp({
           : 'translateY(0)',
       }}
     >
-      {children}
+      {loading ? (
+        <span className="flex items-center gap-2">
+          <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+          </svg>
+          {children}
+        </span>
+      ) : (
+        children
+      )}
     </button>
   );
 }

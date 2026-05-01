@@ -13,7 +13,7 @@ interface AddWishSheetProps {
 const emojis = ['🎬', '🍦', '📖', '🛝', '🌙', '🍕', '🧸', '🎮', '🎁', '🍪', '🚲', '🎨'];
 
 export function AddWishSheet({ onClose }: AddWishSheetProps) {
-  const { createWish } = useStore();
+  const { createWish, loading } = useStore();
   const [emoji, setEmoji] = useState('🎁');
   const [name, setName] = useState('');
   const [cost, setCost] = useState(10);
@@ -23,6 +23,7 @@ export function AddWishSheet({ onClose }: AddWishSheetProps) {
       name: name.trim(),
       emoji,
       cost,
+      category: 'normal',
       color: randomColor(),
     });
     onClose();
@@ -82,7 +83,7 @@ export function AddWishSheet({ onClose }: AddWishSheetProps) {
           <Stamp color="paper" block onClick={onClose}>
             Cancel
           </Stamp>
-          <Stamp color="coral" block disabled={!name.trim()} onClick={handleCreate}>
+          <Stamp color="coral" block disabled={!name.trim()} loading={loading} onClick={handleCreate}>
             Create wish
           </Stamp>
         </div>

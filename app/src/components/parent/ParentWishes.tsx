@@ -1,18 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Egg, EggBadge, StatusPill, Stamp } from '@/components/ui';
+import { Card, Egg, EggBadge, Pill, StatusPill, Stamp } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { formatRelativeTime } from '@/lib/utils';
 
 interface ParentWishesProps {
-  onSwitchRole: () => void;
   onAddWish: () => void;
 }
 
-export function ParentWishes({ onSwitchRole, onAddWish }: ParentWishesProps) {
-  const { user, users, wishes, wishRequests, approveWish, rejectWish } = useStore();
+export function ParentWishes({ onAddWish }: ParentWishesProps) {
+  const { user, users, wishes, wishRequests, approveWish, rejectWish, refreshFromDb, convertWishToNormal, loading } = useStore();
   const [tab, setTab] = useState<'pending' | 'catalog' | 'history'>('pending');
+  const [adjustingReqId, setAdjustingReqId] = useState<string | null>(null);
+  const [adjustAmount, setAdjustAmount] = useState(0);
   const familyId = user?.familyId || 'f1';
   const familyWishes = wishes.filter((wish) => wish.familyId === familyId);
   const linkedKids = users.filter((u) => u.role === 'child' && u.familyId === familyId);
@@ -35,14 +36,14 @@ export function ParentWishes({ onSwitchRole, onAddWish }: ParentWishesProps) {
           <div className="font-body text-sm text-sd-ink-soft mt-1">Review requests & set rewards</div>
         </div>
         <button
-          onClick={onSwitchRole}
+          onClick={() => refreshFromDb()}
           className="
             border-none bg-sd-green-lt text-sd-green-dk
             font-display font-bold text-[11px]
             px-3 py-2 rounded-full cursor-pointer tracking-wider
           "
         >
-          👶 KID
+          ↻
         </button>
       </div>
 
@@ -82,6 +83,66 @@ export function ParentWishes({ onSwitchRole, onAddWish }: ParentWishesProps) {
           {pendingReqs.map((req) => {
             const wish = familyWishes.find((w) => w.id === req.wishId);
             if (!wish) return null;
+            const isAdjusting = adjustingReqId === req.id;
+
+            const handleStartAdjust = () => {
+              setAdjustingReqId(req.id);
+              setAdjustAmount(wish.cost);
+            };
+
+            const handleConfirmApprove = () => {
+              approveWish(req.id, adjustAmount);
+              setAdjustingReqId(null);
+            };
+
+            const handleCancelAdjust = () => {
+              setAdjustingReqId(null);
+              setAdjustAmount(0);
+            };
+
+            if (isAdjusting) {
+              return (
+                <div
+                  key={req.id}
+                  className="bg-white rounded-[22px] p-3.5 border-2 border-[rgba(20,40,30,0.05)] shadow-[0_2px_0_rgba(20,40,30,0.05)]"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className="w-[44px] h-[44px] rounded-xl flex items-center justify-center text-[22px]"
+                      style={{ background: wish.color }}
+                    >
+                      {wish.emoji}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-display font-bold text-base text-sd-ink">{wish.name}</div>
+                      <div className="font-body text-xs text-sd-ink-soft mt-0.5">
+                        {childName(req.userId)} · {formatRelativeTime(req.timestamp)}
+                      </div>
+                    </div>
+                    <div className="bg-sd-egg-lt rounded-xl p-2.5 flex items-center gap-1.5">
+                      <Egg size={14} />
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={adjustAmount}
+                        onChange={(e) => setAdjustAmount(Math.max(1, Number(e.target.value)))}
+                        className="w-[44px] border-none bg-transparent font-display font-bold text-xl text-sd-egg-dk text-center outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Stamp color="paper" size="sm" block loading={loading} onClick={handleCancelAdjust}>
+                      Cancel
+                    </Stamp>
+                    <Stamp color="coral" size="sm" block loading={loading} onClick={handleConfirmApprove}>
+                      ✓ Grant {adjustAmount !== wish.cost ? `(${adjustAmount > wish.cost ? '+' : ''}${adjustAmount - wish.cost})` : ''}
+                    </Stamp>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={req.id}
@@ -103,10 +164,10 @@ export function ParentWishes({ onSwitchRole, onAddWish }: ParentWishesProps) {
                   <EggBadge count={wish.cost} size={14} />
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <Stamp color="paper" size="sm" block onClick={() => rejectWish(req.id)} className="text-sd-coral-dk">
+                  <Stamp color="paper" size="sm" block loading={loading} onClick={() => rejectWish(req.id)} className="text-sd-coral-dk">
                     ✕ Reject
                   </Stamp>
-                  <Stamp color="coral" size="sm" block onClick={() => approveWish(req.id)}>
+                  <Stamp color="coral" size="sm" block loading={loading} onClick={handleStartAdjust}>
                     ✓ Grant
                   </Stamp>
                 </div>
@@ -139,10 +200,30 @@ export function ParentWishes({ onSwitchRole, onAddWish }: ParentWishesProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-display font-bold text-sm text-sd-ink">{wish.name}</div>
-                <div className="font-body text-[11px] text-sd-ink-mute mt-0.5">Reward set by you</div>
+                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                  {wish.category === 'other' ? (
+                    <Pill variant="coral">👤 Custom</Pill>
+                  ) : (
+                    <span className="font-body text-[11px] text-sd-ink-mute">Catalog</span>
+                  )}
+                </div>
               </div>
-              <div className="bg-sd-egg-lt rounded-xl py-1.5 px-2.5 flex items-center gap-1 font-display font-bold text-sm text-sd-egg-dk">
-                <Egg size={14} /> {wish.cost}
+              <div className="flex items-center gap-2">
+                <div className="bg-sd-egg-lt rounded-xl py-1.5 px-2.5 flex items-center gap-1 font-display font-bold text-sm text-sd-egg-dk">
+                  <Egg size={14} /> {wish.cost}
+                </div>
+                {wish.category === 'other' && (
+                  <button
+                    onClick={() => convertWishToNormal(wish.id)}
+                    className="
+                      border-none bg-sd-sky-lt text-sd-sky-dk
+                      font-display font-bold text-[10px]
+                      px-2 py-1.5 rounded-full cursor-pointer tracking-wider whitespace-nowrap
+                    "
+                  >
+                    Convert
+                  </button>
+                )}
               </div>
             </div>
           ))}
