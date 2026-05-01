@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   description: 'You become stronger by what you do.',
   manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.ico',
   },
   appleWebApp: {
     capable: true,
