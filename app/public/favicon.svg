@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <radialGradient id="egg" cx="38%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#e8d15a"/>
+      <stop offset="50%" stop-color="#d4b538"/>
+      <stop offset="100%" stop-color="#b8962a"/>
+    </radialGradient>
+  </defs>
+  <!-- Egg shape -->
+  <ellipse cx="16" cy="18" rx="14" ry="16" fill="url(#egg)" stroke="#7a6218" stroke-width="1.5"/>
+  <!-- Shine -->
+  <ellipse cx="11" cy="12" rx="3.5" ry="5" fill="rgba(255,255,255,0.6)" transform="rotate(-20 11 12)"/>
+  <!-- Spots -->
+  <circle cx="21" cy="16" r="1.5" fill="#7a6218" opacity="0.4"/>
+  <circle cx="12" cy="24" r="1.2" fill="#7a6218" opacity="0.4"/>
+  <!-- Dino silhouette on egg -->
+  <path d="M14 26c0-3 1-5 3-7l-6-4v3l4 4c-1 1-2 2-2 4h1z" fill="#5a8a3c" opacity="0.6"/>
+  <path d="M18 26c0-3-1-5-3-7l6-4v3l-4 4c1 1 2 2 2 4h-1z" fill="#5a8a3c" opacity="0.6"/>
+</svg>

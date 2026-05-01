@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   title: 'SuperDino',
   description: 'You become stronger by what you do.',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.svg',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
