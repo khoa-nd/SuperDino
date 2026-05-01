@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+/* SuperDino Custom Theme */
+@theme inline {
+  /* Background colors */
+  --color-sd-cream: oklch(0.97 0.02 90);
+  --color-sd-cream2: oklch(0.94 0.03 90);
+  --color-sd-paper: #ffffff;
+
+  /* Ink colors */
+  --color-sd-ink: oklch(0.25 0.04 145);
+  --color-sd-ink-soft: oklch(0.45 0.04 145);
+  --color-sd-ink-mute: oklch(0.65 0.03 145);
+
+  /* Brand green */
+  --color-sd-green: oklch(0.72 0.18 145);
+  --color-sd-green-dk: oklch(0.55 0.16 145);
+  --color-sd-green-lt: oklch(0.92 0.08 145);
+
+  /* Eggs (warm yellow) */
+  --color-sd-egg: oklch(0.86 0.16 90);
+  --color-sd-egg-dk: oklch(0.72 0.17 75);
+  --color-sd-egg-lt: oklch(0.96 0.06 95);
+
+  /* Coral accent */
+  --color-sd-coral: oklch(0.72 0.18 30);
+  --color-sd-coral-dk: oklch(0.58 0.18 30);
+  --color-sd-coral-lt: oklch(0.94 0.05 30);
+
+  /* Sky / wishes */
+  --color-sd-sky: oklch(0.78 0.13 240);
+  --color-sd-sky-dk: oklch(0.58 0.15 250);
+  --color-sd-sky-lt: oklch(0.95 0.04 240);
+
+  /* Status */
+  --color-sd-ok: oklch(0.72 0.18 145);
+  --color-sd-warn: oklch(0.82 0.16 75);
+  --color-sd-bad: oklch(0.65 0.20 25);
+
+  /* Fonts */
+  --font-display: "Fredoka", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, sans-serif;
+
+  /* Shadows */
+  --shadow-card: 0 2px 0 rgba(20,40,30,0.06), 0 8px 24px rgba(20,40,30,0.05);
+  --shadow-stamp: 0 4px 0 var(--stamp-edge-color, oklch(0.55 0.16 145));
+  --shadow-hero: 0 4px 0 oklch(0.80 0.13 80), 0 12px 28px rgba(120,80,10,0.08);
+
+  /* Border radius */
+  --radius-sm: 0.875rem;
+  --radius-md: 1.125rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 1.75rem;
+  --radius-full: 9999px;
+}
+
+/* Base styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background:
+    radial-gradient(ellipse at 30% 20%, oklch(0.92 0.06 145) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, oklch(0.93 0.05 30) 0%, transparent 50%),
+    oklch(0.95 0.02 90);
+  min-height: 100vh;
+  color: var(--color-sd-ink);
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Animations */
+@keyframes sd-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.4); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes sd-pop-big {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes sd-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sd-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes sd-confetti {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(800px) rotate(720deg); opacity: 0; }
+}
+
+@keyframes sd-wave {
+  0%, 100% { transform: rotate(-30deg); }
+  50% { transform: rotate(15deg); }
+}
+
+@keyframes sd-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes sd-fly-in {
+  0% { transform: translate(40px, 60px) scale(0.4); opacity: 0; }
+  60% { opacity: 1; }
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+
+/* Animation utilities */
+.animate-pop {
+  animation: sd-pop 0.6s ease;
+}
+
+.animate-pop-big {
+  animation: sd-pop-big 400ms cubic-bezier(.2,1.4,.4,1);
+}
+
+.animate-fade {
+  animation: sd-fade 200ms ease;
+}
+
+.animate-slide-up {
+  animation: sd-slide-up 280ms cubic-bezier(.2,.9,.3,1);
+}
+
+.animate-wave {
+  animation: sd-wave 1.6s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.animate-bob {
+  animation: sd-bob 2s ease-in-out infinite;
+}
+
+/* Tap highlight removal */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Input styling */
+input[type="range"] {
+  accent-color: var(--color-sd-green);
+}
+
+input[type="range"].coral {
+  accent-color: var(--color-sd-coral);
+}

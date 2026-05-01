@@ -1,0 +1,101 @@
+// SuperDino Type Definitions
+
+export type UserRole = 'child' | 'parent';
+
+export interface User {
+  id: string;
+  username: string;
+  name: string;
+  role: UserRole;
+  familyId?: string;
+  createdAt: string;
+}
+
+export interface Family {
+  id: string;
+  name: string;
+  code: string;
+  createdAt: string;
+}
+
+export type TaskCategory = 'morning' | 'home' | 'school' | 'kind';
+
+export interface Task {
+  id: string;
+  name: string;
+  emoji: string;
+  reward: number;
+  category: TaskCategory;
+  autoApprove: boolean;
+  color: string;
+  familyId: string;
+  createdAt: string;
+}
+
+export type TaskLogStatus = 'pending' | 'approved' | 'auto-approved' | 'rejected';
+
+export interface TaskLog {
+  id: string;
+  taskId: string;
+  userId: string;
+  status: TaskLogStatus;
+  timestamp: string;
+  task?: Task; // Joined data
+}
+
+export interface Wish {
+  id: string;
+  name: string;
+  emoji: string;
+  cost: number;
+  color: string;
+  familyId: string;
+  createdAt: string;
+}
+
+export type WishRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface WishRequest {
+  id: string;
+  wishId: string;
+  userId: string;
+  status: WishRequestStatus;
+  timestamp: string;
+  wish?: Wish; // Joined data
+}
+
+export type TransactionType = 'earn' | 'spend';
+
+export interface Transaction {
+  id: string;
+  userId: string;
+  amount: number;
+  type: TransactionType;
+  label: string;
+  timestamp: string;
+}
+
+// App state
+export interface AppState {
+  user: User | null;
+  eggs: number;
+  tasks: Task[];
+  taskLogs: TaskLog[];
+  wishes: Wish[];
+  wishRequests: WishRequest[];
+  transactions: Transaction[];
+  streak: number;
+}
+
+// Activity item for combined history view
+export interface ActivityItem {
+  id: string;
+  kind: 'task' | 'wish';
+  emoji: string;
+  color: string;
+  title: string;
+  timestamp: string;
+  status: TaskLogStatus | WishRequestStatus;
+  amount: number;
+  direction: 'in' | 'out';
+}
