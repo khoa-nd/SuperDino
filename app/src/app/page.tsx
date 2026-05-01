@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useStore } from '@/lib/store';
-import { Toast } from '@/components/ui';
+import { Toast, LoadingBar } from '@/components/ui';
 
 // Auth screens
 import { OnboardingScreen } from '@/components/shared/OnboardingScreen';
@@ -26,6 +26,7 @@ export default function SuperDinoApp() {
     viewRole,
     toast,
     celebrate,
+    loading,
     setAuthStage,
     setPendingRole,
     login,
@@ -183,6 +184,7 @@ export default function SuperDinoApp() {
 
           {/* Content */}
           <div className="h-full flex flex-col pt-8 overflow-hidden">
+            {loading && <LoadingBar />}
             <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col">
               {screen}
             </div>

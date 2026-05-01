@@ -125,6 +125,11 @@ body {
   100% { transform: translate(0, 0) scale(1); opacity: 1; }
 }
 
+@keyframes sd-loading-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
 /* Animation utilities */
 .animate-pop {
   animation: sd-pop 0.6s ease;
@@ -149,6 +154,10 @@ body {
 
 .animate-bob {
   animation: sd-bob 2s ease-in-out infinite;
+}
+
+.animate-loading-bar {
+  animation: sd-loading-bar 1.2s ease-in-out infinite;
 }
 
 /* Tap highlight removal */
