@@ -1,0 +1,152 @@
+Product Requirements Document (PRD)
+
+Product Name: SuperDino
+
+Currency: Egg 🥚
+
+1. Product Overview
+SuperDino is a mobile-friendly web application designed to help children build positive habits through a fun, reward-based system. Children log meaningful actions, parents approve them, and rewards are given in the form of "Eggs". Eggs can be redeemed for wishes, encouraging delayed gratification and responsibility.
+
+2. Goals & Objectives
+- Encourage consistent positive behavior
+- Teach effort → reward → delayed gratification
+- Reinforce family contribution and responsibility
+
+3. Core Concept
+Child performs real-world actions → logs them →
+Parent reviews → approves →
+Child earns Eggs →
+Child redeems via “wish system” →
+Parent approves/rejects →
+System learns over time (AI layer in future)
+
+4. Key Features
+
+4.1 Task Logging (Child)
+- Log completed activities
+- Predefined tasks by parents
+- Optional custom tasks
+- Status: Pending Approval
+
+4.2 Parent Approval System
+- Approve or reject tasks
+- Optional feedback
+- Quick approval interface
+- History tracking
+
+4.3 Reward System (Eggs 🥚)
+- Earn Eggs for approved tasks
+- Track Egg balance (Egg Nest)
+- Maintain transaction history (Egg History)
+
+4.4 Redemption (Wish System)
+- Submit wishes using Eggs
+- Select from past wishes
+- Parent approval required
+- Status: pending / approved / rejected
+
+4.5 History System
+- Task history
+- Reward history
+- Wish history
+
+5. AI Features (Future Phase)
+- Suggest reward values for tasks
+- Suggest approval/rejection for wishes
+- Provide behavior insights
+
+6. User Roles
+
+Child:
+- Log tasks
+- View Eggs
+- Submit wishes
+
+Parents:
+- Create tasks
+- Approve/reject tasks
+- Assign rewards
+- Review history
+
+7. User Flow
+1. Child completes task
+2. Logs task
+3. Parent approves
+4. Eggs awarded
+5. Child accumulates Eggs
+6. Child submits wish
+7. Parent approves/rejects
+
+8. UX Principles
+- Minimal text, icon-driven
+- Fast interactions
+- Positive reinforcement only
+- Fun and engaging (SuperDino theme)
+
+9. Technical Requirements
+
+Frontend:
+- Responsive web app
+- Mobile-first design
+
+Backend:
+- REST API
+- Authentication (parent/child roles)
+
+Database:
+- Users
+- Tasks
+- TaskLogs
+- Rewards
+- Wishes
+
+10. Data Model (Simplified)
+
+User:
+- id
+- role
+
+Task:
+- id
+- name
+- reward_value
+
+TaskLog:
+- id
+- user_id
+- task_id
+- status
+
+RewardTransaction:
+- id
+- amount
+- type
+
+Wish:
+- id
+- description
+- cost
+- status
+
+11. MVP Scope
+- Task logging
+- Parent approval
+- Manual reward assignment
+- Egg balance tracking
+- Wish redemption
+- Basic history
+
+12. Future Enhancements
+- Dino character evolution
+- Egg hatching system
+- Gamification (levels, badges)
+- Notifications
+- Voice input
+
+13. Risks
+- Over-rewarding
+- System complexity
+- Parent inconsistency
+
+14. Guiding Philosophy
+“You become stronger by what you do.”

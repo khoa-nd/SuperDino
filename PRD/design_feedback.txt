@@ -1,0 +1,152 @@
+Verifier agent check completed
+Claude
+Let me fix these layout issues.
+
+Now let me fix the three layout issues:
+
+SectionTitle — make title not shrink, and right element compact (no wrap)
+Stamp button — make sm size taller for descenders
+Hero buttons — replace inline buttons with full-width / compact arrangement
+Now fix the Stamp sm size to give descenders room, and the hero "+ Log a task" wrapping issue.
+
+I'll add whiteSpace: nowrap directly on the Stamp button so labels stop wrapping, then fix the hero layout.
+
+Now fix the hero "+ Log a task" wrapping. The issue: two inline buttons in a flex row plus the dino are competing for space. I'll make the row wrap-safe by using flex with shrink and a min-width.
+
+I need to make Stamp accept the style prop. Let me check.
+
+Style is accepted but not spread into the button element. Let me check.
+
+Polish pass done. The three layout issues are fixed:
+
+Section titles now use whiteSpace: nowrap + flex: 0 0 auto so "Quick log", "Tasks to approve", and "Wishes to grant" stay on one line
+Stamp button got more vertical room (38→42px on sm size) plus whiteSpace: nowrap and lineHeight: 1 — descenders no longer clip and labels stop wrapping
+Hero buttons are now flex: 1 each, splitting the row evenly so "+ Log task" and "History" both fit cleanly next to the dino
+You
+Wow. This is like a prototype MVP interactive app. Keep it. And can you help me to breadk down screen by screen into below so that I could clearly review each screen UI?
+Claude
+I'll create a design canvas that lays out each screen as its own artboard so you can review them side-by-side. Let me get the canvas component first.
+
+I'll build a screens canvas that renders each screen as an isolated artboard with seeded state, so each screen shows in a meaningful state (e.g. tasks list with items pending, nest with eggs, parent inbox with approvals waiting).
+
+[Snipping more completed work to free up context.]
+
+Now I'll build the screens canvas. Each artboard renders one screen with seeded state inside a phone-sized frame so reviewers can see them all at once.
+
+Here you go — SuperDino Screens.html lays out all 14 screens on a pannable design canvas, grouped into three sections so you can review each one in isolation:
+
+01 · Onboarding
+
+01 Role select
+02 · Child app
+
+02 Home (hero dino + egg balance + quick log)
+03 Tasks list (with category filters)
+04 Task pending (toast confirmation visible)
+05 Egg Nest (balance + history)
+06 Wishes catalog
+07 Submit a wish (sheet open)
+08 Earned eggs! 🎉 (celebration overlay)
+03 · Parent app
+
+09 Inbox / Dashboard
+10 Tasks · pending approvals
+11 Tasks · manage list
+12 Add new task (sheet open)
+13 Wishes review
+14 History (with stats + filters)
+How to use it:
+
+Pan by dragging the empty canvas
+Zoom with the canvas controls or scroll
+Click any artboard to enter focus mode for a fullscreen review of that one screen (←/→/Esc to navigate)
+Drag artboards within a section to reorder them
+Double-click a label to rename it as you leave review notes
+The original interactive prototype (SuperDino Prototype.html) is still there for end-to-end flow testing — this canvas is the static review companion.
+
+You
+OK. 
+
+1. First landing, onboarding screen when user selected I'm a Kid or I'm a Parent. you need to ask user to register their username and password. Once they logged in, second landing onwards would show directly Home screen.
+2. Because this app is for kid so it needs to be simple. Can you merge 02 Home and 05 Egg Next into one screen as Home?
+In the Home screen, it should display
+- User name
+- Current Balance and icon Egg yellow
+- Earned Spent Streak is ok
+- Keep button Log Task, replaced History button by Wishes 
+- Below are History sorted by recent task logged most
+- Each iteam has icon, title, date time, status and corresponding eggs - must sort by date time
+- I think it depends on the nature of the task to decide it needs APPROVAL from Parent or not. There are some minor quickly done Task such as Brush teeth, when kid logged it then it show the Awesome! pop-up and auto reward eggs - This is called auto approved task and the status is also AUTO-APPROVED. This option AUTO-APPROVED task is by default. If there are any task thet required parent approval then parent should tick on Approved = Required in the form of task registration from parent.
+- Remove 4 items strip in the bottom of each screen
+3. Task list (keep) - show when click on Log task button
+4. Task pending and 5. Egg Nest remove
+06 Wishes (keep) - show when click on Wishes button
+08. Keep this animated pop-up
+- Auto-approved task : shows you earned X egg by doing <<task name>>
+- Parent approved task : once parent approved in their screen app, no need to pop-up, just silently plus on balance and update the history status of that task, kids will know.
+
+Parent Part
+- keep all screen for me - that's very good. Except remember to add field Task is auto-approval or manual approval for user to choose when they added new task
+- 09. Inbox / Daasboard (keep the same) - but only show Task that requires parent to approve. Keep wishes to grant as well - keep history of all wishes
+- I cannot find a screen to manage Wishes for parent to input rewards themselves. Add it!
+
+OK let's go to revise both prototype and screen by screen
+Claude
+[Snipping early phases to free context.]
+
+Got it. Let me plan the changes:
+
+Onboarding: add login/register form after role pick
+Child Home: merge with Egg Nest — show balance, stats (earned/spent/streak), Log Task + Wishes buttons, full history sorted by date
+Auto-approve flag: task can be auto-approved (default) or require parent approval; auto-approved tasks instantly grant eggs + show celebration; parent-approved tasks plus balance silently when approved
+Remove: task pending + egg nest screens; tab bar with 4 items in child app (use buttons on home instead)
+Wishes: keep, navigate via Home button
+Parent: add auto-approval toggle to add-task form, add "Manage wishes catalog" screen, dashboard only shows tasks needing approval
+Now let me rewrite the child screens. I'll make a fresh version of child-screens.jsx with the merged Home and reduced screen count.
+
+[Continuing with parent-screens rewrite.]
+
+Now the parent screens — keep the dashboard/tasks/wishes/history but add: (1) auto-approval toggle in add-task form, (2) wish catalog management screen, (3) dashboard only shows tasks needing parent approval (not auto-approved).
+
+Now let me read the current Prototype HTML to update it for the new state model (kid auth, autoApprove flag on tasks, instant rewards for auto-approved, etc.).
+
+Now let me rewrite the prototype HTML with the new state model: user accounts, login flow, autoApprove on tasks, instant rewards for auto-approved tasks, ts on logs/wishes for sorting, kid name passed through, and the wish-add flow for parents.
+
+Let me check the ui-kit to confirm exports needed (Sparkle, Avatar, Pill, EggBadge, etc.) — child-screens uses several helpers I want to verify exist.
+
+Good — Avatar, Pill, EggBadge, Sparkle, Egg, Dino, Card, Stamp, SD, FONTS all exported from ui-kit. Note: SectionTitle is exported from ui-kit too AND I'm re-exporting from child-screens. Let me check ui-kit to see if there's a conflict, and also verify SD.sky/SD.skyDk/SD.skyLt/SD.paper exist.
+
+All required color tokens exist. Now let me also update the Screens canvas file to reflect the new structure (login screen added, Home merged with Nest, Egg Nest + Pending screens removed, parent wishes catalog added). Let me first verify the prototype loads.
+
+Now let me update the Screens canvas to reflect the new structure, then call done.
+
+I need to rewrite the screens canvas to match the v2 structure: add login screens, merge Home (no separate Egg Nest), remove Pending toast, add Wishes catalog management, no child tab bar.
+
+[Calling done to surface the prototype.]
+
+Verifier agent check completed
+Claude
+SuperDino v2 is live. Here's what changed:
+
+Auth flow
+
+Role pick → username + password form (Login / Sign up toggle) → Home
+Form validates (≥2 char username, ≥3 char password) before enabling submit
+Child app — simpler
+
+Home merged with Egg Nest — single screen: name, balance + egg, Earned/Spent/Streak stats, two big buttons (Log Task + Wishes), then full activity history sorted by recency
+Each history item: icon · TASK/WISH tag · status pill · title · date/time · ± eggs
+Removed: tab bar, separate Egg Nest screen, separate Pending screen
+Tasks list & Wishes are sub-screens entered from Home buttons (with back arrow)
+Auto-approve vs Required approval
+
+Tasks now have an autoApprove flag (default = ON when adding)
+Auto-approved (e.g. Brush teeth ⚡): logging instantly grants eggs + plays the celebration pop-up ("Awesome! You earned 2 eggs!")
+Approval required (👤): goes pending; parent's Inbox only lists these. When parent approves, eggs increment silently and history flips to "Approved" — kids see it next time they look
+Tasks list shows ⚡ Auto / 👤 Approval pill so kids know what to expect
+Parent app
+
+Inbox only shows tasks needing parent approval (auto-approved tasks never appear)
+Add task form has the Approval toggle with live explanation
+New Wishes catalog tab — parents can review pending wishes, manage the catalog (set rewards), see history, and + Add new wish with icon/name/cost
+Both files updated: SuperDino Prototype.html (interactive, all flows wired) and SuperDino Screens.html (16 artboards on the design canvas — auth screens, child screens, parent screens incl. catalog management).

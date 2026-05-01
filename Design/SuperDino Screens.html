@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SuperDino · All Screens v2</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: "Nunito", system-ui, sans-serif;
+    background: oklch(0.97 0.02 90);
+    color: oklch(0.25 0.04 145);
+  }
+  button { font-family: inherit; }
+  input { font-family: inherit; }
+  .device-content::-webkit-scrollbar { width: 0; height: 0; }
+
+  @keyframes sd-pop {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.4); }
+    70% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+  @keyframes sd-pop-big {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes sd-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes sd-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes sd-confetti {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(800px) rotate(720deg); opacity: 0; }
+  }
+  @keyframes sd-wave {
+    0%, 100% { transform: rotate(-30deg); }
+    50%      { transform: rotate(15deg); }
+  }
+  @keyframes sd-bob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+  }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="android-frame.jsx"></script>
+<script type="text/babel" src="ui-kit.jsx"></script>
+<script type="text/babel" src="child-screens.jsx"></script>
+<script type="text/babel" src="parent-screens.jsx"></script>
+
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+const NOW = Date.now();
+const HOUR = 1000 * 60 * 60;
+const DAY = HOUR * 24;
+
+const TASKS = [
+  { id: 't1', name: 'Brush teeth',     emoji: '🦷', reward: 2, category: 'morning', autoApprove: true,  color: 'oklch(0.92 0.06 240)' },
+  { id: 't2', name: 'Make my bed',     emoji: '🛏️', reward: 3, category: 'morning', autoApprove: true,  color: 'oklch(0.94 0.06 90)' },
+  { id: 't3', name: 'Read 20 minutes', emoji: '📚', reward: 5, category: 'school',  autoApprove: false, color: 'oklch(0.93 0.07 30)' },
+  { id: 't4', name: 'Feed the dog',    emoji: '🐶', reward: 4, category: 'home',    autoApprove: true,  color: 'oklch(0.93 0.07 60)' },
+  { id: 't5', name: 'Tidy my room',    emoji: '🧹', reward: 6, category: 'home',    autoApprove: false, color: 'oklch(0.93 0.06 145)' },
+  { id: 't6', name: 'Help with dinner',emoji: '🥗', reward: 4, category: 'kind',    autoApprove: false, color: 'oklch(0.92 0.07 145)' },
+  { id: 't7', name: 'Practice piano',  emoji: '🎵', reward: 5, category: 'school',  autoApprove: false, color: 'oklch(0.93 0.06 280)' },
+  { id: 't8', name: 'Be kind to bro',  emoji: '💚', reward: 3, category: 'kind',    autoApprove: true,  color: 'oklch(0.93 0.07 30)' },
+];
+
+const LOGS = [
+  { id: 'l1', taskId: 't1', status: 'auto-approved', when: 'Today, 7:42am', ts: NOW - 8 * HOUR },
+  { id: 'l2', taskId: 't3', status: 'pending',       when: 'Today, 4:15pm', ts: NOW - 1 * HOUR },
+  { id: 'l3', taskId: 't4', status: 'auto-approved', when: 'Yesterday',     ts: NOW - 1 * DAY },
+  { id: 'l4', taskId: 't5', status: 'approved',      when: '2 days ago',    ts: NOW - 2 * DAY },
+  { id: 'l5', taskId: 't6', status: 'pending',       when: 'Today, 5:50pm', ts: NOW - 30 * 60 * 1000 },
+];
+
+const TX = [
+  { id: 'x1', type: 'earn',  amount: 2, label: 'Brush teeth', when: 'Today' },
+  { id: 'x2', type: 'earn',  amount: 4, label: 'Feed the dog', when: 'Yesterday' },
+  { id: 'x3', type: 'spend', amount: 8, label: 'Extra screen time', when: 'Yesterday' },
+  { id: 'x4', type: 'earn',  amount: 6, label: 'Tidy my room', when: '2 days ago' },
+];
+
+const WISH_CATALOG = [
+  { id: 'w1', name: 'Movie night',    emoji: '🎬', cost: 12, color: 'oklch(0.92 0.07 280)' },
+  { id: 'w2', name: 'Ice cream trip', emoji: '🍦', cost: 8,  color: 'oklch(0.94 0.07 30)' },
+  { id: 'w3', name: 'New book',       emoji: '📖', cost: 20, color: 'oklch(0.92 0.07 145)' },
+  { id: 'w4', name: 'Park playdate',  emoji: '🛝', cost: 15, color: 'oklch(0.93 0.07 90)' },
+  { id: 'w5', name: 'Stay up late',   emoji: '🌙', cost: 10, color: 'oklch(0.92 0.06 240)' },
+  { id: 'w6', name: 'Pick dinner',    emoji: '🍕', cost: 6,  color: 'oklch(0.94 0.07 60)' },
+];
+
+const WISHES = [
+  { id: 'wi1', name: 'Stay up late',  emoji: '🌙', cost: 10, color: 'oklch(0.92 0.06 240)', status: 'pending',  when: 'Today',     ts: NOW - 30 * 60 * 1000 },
+  { id: 'wi2', name: 'Ice cream trip',emoji: '🍦', cost: 8,  color: 'oklch(0.94 0.07 30)',  status: 'approved', when: 'Yesterday', ts: NOW - 1 * DAY },
+];
+
+const STATE = {
+  eggs: 14,
+  tasks: TASKS, logs: LOGS, transactions: TX, wishes: WISHES, wishCatalog: WISH_CATALOG,
+  user: { name: 'Mia', role: 'child' },
+  kidName: 'Mia',
+  justEarned: false,
+};
+
+const STATE_PARENT = {
+  ...STATE,
+  user: { name: 'Sam', role: 'parent' },
+  wishes: [
+    { id: 'wi1', name: 'Stay up late',  emoji: '🌙', cost: 10, color: 'oklch(0.92 0.06 240)', status: 'pending',  when: 'Today',     ts: NOW - 30 * 60 * 1000 },
+    { id: 'wi3', name: 'Movie night',   emoji: '🎬', cost: 12, color: 'oklch(0.92 0.07 280)', status: 'pending',  when: 'Today',     ts: NOW - 60 * 60 * 1000 },
+    { id: 'wi2', name: 'Ice cream trip',emoji: '🍦', cost: 8,  color: 'oklch(0.94 0.07 30)',  status: 'approved', when: 'Yesterday', ts: NOW - 1 * DAY },
+  ],
+};
+
+const noop = () => {};
+
+function Phone({ children, tabBar, overlay }) {
+  return (
+    <AndroidDevice width={412} height={892}>
+      <div className="device-content" style={{
+        width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
+        position: 'relative', overflow: 'hidden',
+        background: 'oklch(0.97 0.02 90)',
+      }}>
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          {children}
+        </div>
+        {tabBar}
+        {overlay}
+      </div>
+    </AndroidDevice>
+  );
+}
+
+const SCREEN_W = 460;
+const SCREEN_H = 940;
+
+function Screen({ children }) {
+  return (
+    <div style={{
+      width: SCREEN_W, height: SCREEN_H,
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+      paddingTop: 8, background: 'transparent',
+    }}>{children}</div>
+  );
+}
+
+// Helper to switch sub-tabs after mount
+function ClickTab({ label, children }) {
+  const ref = React.useRef();
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const buttons = el.querySelectorAll('button');
+    for (const b of buttons) {
+      if (b.textContent.trim().toLowerCase().startsWith(label.toLowerCase())) {
+        b.click();
+        break;
+      }
+    }
+  }, []);
+  return <div ref={ref} style={{ display: 'contents' }}>{children}</div>;
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+
+      <DCSection id="onboarding" title="01 · Onboarding & Auth" subtitle="Role pick → register/login → Home">
+        <DCArtboard id="ob-01" label="01 Role select" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><Phone><OnboardingScreen onPick={noop}/></Phone></Screen>
+        </DCArtboard>
+        <DCArtboard id="ob-02" label="02 Kid · Sign up" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><Phone><LoginScreen role="child" onBack={noop} onLogin={noop}/></Phone></Screen>
+        </DCArtboard>
+        <DCArtboard id="ob-03" label="03 Parent · Sign up" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><Phone><LoginScreen role="parent" onBack={noop} onLogin={noop}/></Phone></Screen>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="child" title="02 · Child app" subtitle="Merged Home + Nest, no tab bar">
+        <DCArtboard id="ch-01" label="04 Home (balance + history)" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><Phone><ChildHome state={STATE} onLogTask={noop} onWishes={noop} onSwitchRole={noop}/></Phone></Screen>
+        </DCArtboard>
+        <DCArtboard id="ch-02" label="05 Tasks list" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><Phone><ChildTasks state={STATE} onLog={noop} onBack={noop}/></Phone></Screen>
+        </DCArtboard>
+        <DCArtboard id="ch-03" label="06 Wishes" width={SCREEN_W} height={SCREEN_H}>
+          <Screen><Phone><ChildWishes state={STATE} onOpenWish={noop} onBack={noop}/></Phone></Screen>
+        </DCArtboard>
+        <DCArtboard id="ch-04" label="07 Submit a wish" width={SCREEN_W} height={SCREEN_H}>
+          <Screen>
+            <Phone overlay={<WishSubmitSheet wish={WISH_CATALOG[1]} state={STATE} onClose={noop} onSubmit={noop}/>}>
+              <ChildWishes state={STATE} onOpenWish={noop} onBack={noop}/>
+            </Phone>
+          </Screen>
+        </DCArtboard>
+        <DCArtboard id="ch-05" label="08 Earned eggs! 🎉 (auto-approved)" width={SCREEN_W} height={SCREEN_H}>
+          <Screen>
+            <Phone overlay={<StaticCelebrate amount={2} taskName="Brush teeth"/>}>
+              <ChildHome state={{ ...STATE, eggs: 16, justEarned: true }} onLogTask={noop} onWishes={noop} onSwitchRole={noop}/>
+            </Phone>
+          </Screen>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="parent" title="03 · Parent app" subtitle="Approvals, task & wish management, history">
+        <DCArtboard id="pa-01" label="09 Inbox / Dashboard" width={SCREEN_W} height={SCREEN_H}>
+          <Screen>
+            <Phone tabBar={<ParentTabBar tab="home" onTab={noop}/>}>
+              <ParentDashboard state={STATE_PARENT} onApproveTask={noop} onRejectTask={noop} onApproveWish={noop} onRejectWish={noop} onSwitchRole={noop} onTab={noop}/>
+            </Phone>
+          </Screen>
+        </DCArtboard>
+
+        <DCArtboard id="pa-02" label="10 Tasks · pending" width={SCREEN_W} height={SCREEN_H}>
+          <Screen>
+            <Phone tabBar={<ParentTabBar tab="tasks" onTab={noop}/>}>
+              <ParentTasks state={STATE_PARENT} onApproveTask={noop} onRejectTask={noop} onAddTask={noop} onSwitchRole={noop}/>
+            </Phone>
+          </Screen>
+        </DCArtboard>
+
+        <DCArtboard id="pa-03" label="11 Tasks · manage list" width={SCREEN_W} height={SCREEN_H}>
+          <Screen>
+            <Phone tabBar={<ParentTabBar tab="tasks" onTab={noop}/>}>
+              <ClickTab label="Manage">
+                <ParentTasks state={STATE_PARENT} onApproveTask={noop} onRejectTask={noop} onAddTask={noop} onSwitchRole={noop}/>
+              </ClickTab>
+            </Phone>
+          </Screen>
+        </DCArtboard>
+
+        <DCArtboard id="pa-04" label="12 Add new task (auto vs approval)" width={SCREEN_W} height={SCREEN_H}>
+          <Screen>
+            <Phone tabBar={<ParentTabBar tab="tasks" onTab={noop}/>}
+                   overlay={<AddTaskSheet onClose={noop} onCreate={noop}/>}>
+              <ClickTab label="Manage">
+                <ParentTasks state={STATE_PARENT} onApproveTask={noop} onRejectTask={noop} onAddTask={noop} onSwitchRole={noop}/>
+              </ClickTab>
+            </Phone>
+          </Screen>
+        </DCArtboard>
+
+        <DCArtboard id="pa-05" label="13 Wishes · pending" width={SCREEN_W} height={SCREEN_H}>
+          <Screen>
+            <Phone tabBar={<ParentTabBar tab="wishes" onTab={noop}/>}>
+              <ParentWishes state={STATE_PARENT} onApproveWish={noop} onRejectWish={noop} onAddWish={noop} onSwitchRole={noop}/>
+            </Phone>
+          </Screen>
+        </DCArtboard>
+
+        <DCArtboard id="pa-06" label="14 Wishes · catalog (set rewards)" width={SCREEN_W} height={SCREEN_H}>
+          <Screen>
+            <Phone tabBar={<ParentTabBar tab="wishes" onTab={noop}/>}>
+              <ClickTab label="Catalog">
+                <ParentWishes state={STATE_PARENT} onApproveWish={noop} onRejectWish={noop} onAddWish={noop} onSwitchRole={noop}/>
+              </ClickTab>
+            </Phone>
+          </Screen>
+        </DCArtboard>
+
+        <DCArtboard id="pa-07" label="15 Add new wish" width={SCREEN_W} height={SCREEN_H}>
+          <Screen>
+            <Phone tabBar={<ParentTabBar tab="wishes" onTab={noop}/>}
+                   overlay={<AddWishSheet onClose={noop} onCreate={noop}/>}>
+              <ClickTab label="Catalog">
+                <ParentWishes state={STATE_PARENT} onApproveWish={noop} onRejectWish={noop} onAddWish={noop} onSwitchRole={noop}/>
+              </ClickTab>
+            </Phone>
+          </Screen>
+        </DCArtboard>
+
+        <DCArtboard id="pa-08" label="16 History" width={SCREEN_W} height={SCREEN_H}>
+          <Screen>
+            <Phone tabBar={<ParentTabBar tab="history" onTab={noop}/>}>
+              <ParentHistory state={STATE_PARENT} onSwitchRole={noop}/>
+            </Phone>
+          </Screen>
+        </DCArtboard>
+      </DCSection>
+
+    </DesignCanvas>
+  );
+}
+
+function StaticCelebrate({ amount, taskName }) {
+  const pieces = React.useMemo(() => Array.from({ length: 24 }, (_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    top: 10 + Math.random() * 60,
+    color: [SD.green, SD.coral, SD.eggDk, SD.sky, SD.greenDk][i % 5],
+    rot: Math.random() * 360,
+  })), []);
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(20,40,30,0.35)',
+    }}>
+      {pieces.map(p => (
+        <div key={p.id} style={{
+          position: 'absolute', top: `${p.top}%`, left: `${p.left}%`,
+          width: 10, height: 14, background: p.color, borderRadius: 3,
+          transform: `rotate(${p.rot}deg)`,
+        }}/>
+      ))}
+      <div style={{
+        background: '#fff', borderRadius: 28, padding: '28px 28px 22px',
+        textAlign: 'center', maxWidth: 280, position: 'relative',
+        boxShadow: '0 20px 50px rgba(0,0,0,0.18)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+          <Dino size={120} mood="cheer"/>
+        </div>
+        <div style={{ fontFamily: '"Fredoka", sans-serif', fontWeight: 700, fontSize: 26, color: SD.ink }}>Awesome!</div>
+        <div style={{
+          fontFamily: '"Fredoka", sans-serif', fontWeight: 700, fontSize: 17, color: SD.greenDk,
+          display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8,
+        }}>You earned <Egg size={22}/> {amount} eggs!</div>
+        {taskName && (
+          <div style={{ fontFamily: '"Nunito", sans-serif', fontSize: 13, color: SD.inkSoft, marginTop: 6 }}>
+            for <b>{taskName}</b> ⚡
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

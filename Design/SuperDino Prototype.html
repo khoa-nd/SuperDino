@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SuperDino · Draft Prototype v2</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: "Nunito", system-ui, sans-serif;
+    background:
+      radial-gradient(ellipse at 30% 20%, oklch(0.92 0.06 145) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, oklch(0.93 0.05 30) 0%, transparent 50%),
+      oklch(0.95 0.02 90);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 30px 10px;
+    color: oklch(0.25 0.04 145);
+  }
+  button { font-family: inherit; }
+  input { font-family: inherit; }
+  .device-content::-webkit-scrollbar { width: 0; height: 0; }
+
+  @keyframes sd-pop {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.4); }
+    70% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+  @keyframes sd-pop-big {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes sd-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes sd-slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes sd-confetti {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(800px) rotate(720deg); opacity: 0; }
+  }
+  @keyframes sd-wave {
+    0%, 100% { transform: rotate(-30deg); }
+    50%      { transform: rotate(15deg); }
+  }
+  @keyframes sd-bob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+  }
+  @keyframes sd-fly-in {
+    0%   { transform: translate(40px, 60px) scale(0.4); opacity: 0; }
+    60%  { opacity: 1; }
+    100% { transform: translate(0, 0) scale(1); opacity: 1; }
+  }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="android-frame.jsx"></script>
+<script type="text/babel" src="ui-kit.jsx"></script>
+<script type="text/babel" src="child-screens.jsx"></script>
+<script type="text/babel" src="parent-screens.jsx"></script>
+
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+// ─── Initial seed state ──────────────────────────────────
+// Each task has `autoApprove`. Default = true (instant reward); false = needs parent OK.
+const INITIAL_TASKS = [
+  { id: 't1', name: 'Brush teeth',     emoji: '🦷', reward: 2, category: 'morning', autoApprove: true,  color: 'oklch(0.92 0.06 240)' },
+  { id: 't2', name: 'Make my bed',     emoji: '🛏️', reward: 3, category: 'morning', autoApprove: true,  color: 'oklch(0.94 0.06 90)' },
+  { id: 't3', name: 'Read 20 minutes', emoji: '📚', reward: 5, category: 'school',  autoApprove: false, color: 'oklch(0.93 0.07 30)' },
+  { id: 't4', name: 'Feed the dog',    emoji: '🐶', reward: 4, category: 'home',    autoApprove: true,  color: 'oklch(0.93 0.07 60)' },
+  { id: 't5', name: 'Tidy my room',    emoji: '🧹', reward: 6, category: 'home',    autoApprove: false, color: 'oklch(0.93 0.06 145)' },
+  { id: 't6', name: 'Help with dinner',emoji: '🥗', reward: 4, category: 'kind',    autoApprove: false, color: 'oklch(0.92 0.07 145)' },
+  { id: 't7', name: 'Practice piano',  emoji: '🎵', reward: 5, category: 'school',  autoApprove: false, color: 'oklch(0.93 0.06 280)' },
+  { id: 't8', name: 'Be kind to bro',  emoji: '💚', reward: 3, category: 'kind',    autoApprove: true,  color: 'oklch(0.93 0.07 30)' },
+];
+
+// ts is sortable timestamp (epoch-ish ordering). Newest = highest.
+const NOW = Date.now();
+const HOUR = 1000 * 60 * 60;
+const DAY = HOUR * 24;
+
+const INITIAL_LOGS = [
+  { id: 'l1', taskId: 't1', status: 'auto-approved', when: 'Today, 7:42am', ts: NOW - 8 * HOUR },
+  { id: 'l2', taskId: 't3', status: 'pending',       when: 'Today, 4:15pm', ts: NOW - 1 * HOUR },
+  { id: 'l3', taskId: 't4', status: 'auto-approved', when: 'Yesterday',     ts: NOW - 1 * DAY },
+  { id: 'l4', taskId: 't5', status: 'approved',      when: '2 days ago',    ts: NOW - 2 * DAY },
+];
+
+const INITIAL_TX = [
+  { id: 'x1', type: 'earn',  amount: 2, label: 'Brush teeth', when: 'Today' },
+  { id: 'x2', type: 'earn',  amount: 4, label: 'Feed the dog', when: 'Yesterday' },
+  { id: 'x3', type: 'spend', amount: 8, label: 'Extra screen time', when: 'Yesterday' },
+  { id: 'x4', type: 'earn',  amount: 6, label: 'Tidy my room', when: '2 days ago' },
+];
+
+const INITIAL_WISH_CATALOG = [
+  { id: 'w1', name: 'Movie night',    emoji: '🎬', cost: 12, color: 'oklch(0.92 0.07 280)' },
+  { id: 'w2', name: 'Ice cream trip', emoji: '🍦', cost: 8,  color: 'oklch(0.94 0.07 30)' },
+  { id: 'w3', name: 'New book',       emoji: '📖', cost: 20, color: 'oklch(0.92 0.07 145)' },
+  { id: 'w4', name: 'Park playdate',  emoji: '🛝', cost: 15, color: 'oklch(0.93 0.07 90)' },
+  { id: 'w5', name: 'Stay up late',   emoji: '🌙', cost: 10, color: 'oklch(0.92 0.06 240)' },
+  { id: 'w6', name: 'Pick dinner',    emoji: '🍕', cost: 6,  color: 'oklch(0.94 0.07 60)' },
+];
+
+const INITIAL_WISHES = [
+  { id: 'wi1', name: 'Stay up late', emoji: '🌙', cost: 10, color: 'oklch(0.92 0.06 240)', status: 'pending', when: 'Today', ts: NOW - 30 * 60 * 1000 },
+];
+
+// ─── Root app ────────────────────────────────────────────
+function App() {
+  // Auth gate: roleSelected → user object → home
+  // 'pick'  : choose Kid or Parent
+  // 'login' : enter creds
+  // null    : authed, role known via `user.role`
+  const [authStage, setAuthStage] = React.useState('pick'); // pick | login | done
+  const [pendingRole, setPendingRole] = React.useState(null);
+  const [user, setUser] = React.useState(null); // { username, role, name }
+  // Effective viewing role (parent can switch to kid mode without re-login)
+  const [viewRole, setViewRole] = React.useState(null);
+
+  const [parentTab, setParentTab] = React.useState('home');
+  const [childView, setChildView] = React.useState('home'); // home | tasks | wishes
+
+  const [eggs, setEggs] = React.useState(14);
+  const [tasks, setTasks] = React.useState(INITIAL_TASKS);
+  const [logs, setLogs] = React.useState(INITIAL_LOGS);
+  const [transactions, setTransactions] = React.useState(INITIAL_TX);
+  const [wishCatalog, setWishCatalog] = React.useState(INITIAL_WISH_CATALOG);
+  const [wishes, setWishes] = React.useState(INITIAL_WISHES);
+
+  // Modals & overlays
+  const [celebrate, setCelebrate]   = React.useState(null); // { amount, taskName } | null
+  const [openWish, setOpenWish]     = React.useState(null);
+  const [addingTask, setAddingTask] = React.useState(false);
+  const [addingWish, setAddingWish] = React.useState(false);
+  const [justEarned, setJustEarned] = React.useState(false);
+  const [toast, setToast]           = React.useState(null);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2000);
+  };
+
+  const state = {
+    eggs, tasks, logs, transactions, wishes,
+    wishCatalog,
+    user: user || { name: 'Friend', role: 'child' },
+    kidName: 'Mia',
+    justEarned,
+  };
+
+  // ─ Auth flow ─
+  const handlePickRole = (role) => {
+    setPendingRole(role);
+    setAuthStage('login');
+  };
+  const handleLogin = ({ username, role }) => {
+    const niceName = username.charAt(0).toUpperCase() + username.slice(1);
+    setUser({ username, role, name: niceName });
+    setViewRole(role);
+    setAuthStage('done');
+  };
+  const handleBackFromLogin = () => {
+    setAuthStage('pick');
+    setPendingRole(null);
+  };
+
+  // ─ Child actions ─
+  const handleLog = (taskId) => {
+    const t = tasks.find(x => x.id === taskId);
+    if (!t) return;
+
+    if (t.autoApprove) {
+      // Instant: auto-approved log + transaction + eggs + celebration
+      const newLog = {
+        id: 'l' + Date.now(), taskId,
+        status: 'auto-approved',
+        when: 'Just now', ts: Date.now(),
+      };
+      setLogs([newLog, ...logs]);
+      setEggs(e => e + t.reward);
+      setTransactions([
+        { id: 'x' + Date.now(), type: 'earn', amount: t.reward, label: t.name, when: 'Today' },
+        ...transactions,
+      ]);
+      setJustEarned(true);
+      setTimeout(() => setJustEarned(false), 1500);
+      setCelebrate({ amount: t.reward, taskName: t.name });
+    } else {
+      // Needs parent approval
+      const newLog = {
+        id: 'l' + Date.now(), taskId,
+        status: 'pending',
+        when: 'Just now', ts: Date.now(),
+      };
+      setLogs([newLog, ...logs]);
+      showToast(`Logged "${t.name}" — waiting for parent ⏳`);
+    }
+  };
+
+  const handleSubmitWish = (wish) => {
+    const newWish = {
+      id: 'wi' + Date.now(),
+      name: wish.name, emoji: wish.emoji, cost: wish.cost, color: wish.color,
+      status: 'pending', when: 'Just now', ts: Date.now(),
+    };
+    setWishes([newWish, ...wishes]);
+    setOpenWish(null);
+    showToast('Wish sent! A grown-up will check it ✨');
+  };
+
+  // ─ Parent actions ─
+  const handleApproveTask = (logId) => {
+    const log = logs.find(l => l.id === logId);
+    if (!log) return;
+    const t = tasks.find(x => x.id === log.taskId);
+    if (!t) return;
+    setLogs(logs.map(l => l.id === logId ? { ...l, status: 'approved' } : l));
+    setEggs(e => e + t.reward);
+    setTransactions([
+      { id: 'x' + Date.now(), type: 'earn', amount: t.reward, label: t.name, when: 'Today' },
+      ...transactions,
+    ]);
+    setJustEarned(true);
+    setTimeout(() => setJustEarned(false), 1500);
+  };
+  const handleRejectTask = (logId) => {
+    setLogs(logs.map(l => l.id === logId ? { ...l, status: 'rejected' } : l));
+  };
+  const handleApproveWish = (wishId) => {
+    const w = wishes.find(x => x.id === wishId);
+    if (!w) return;
+    setWishes(wishes.map(x => x.id === wishId ? { ...x, status: 'approved' } : x));
+    setEggs(e => Math.max(0, e - w.cost));
+    setTransactions([
+      { id: 'x' + Date.now(), type: 'spend', amount: w.cost, label: w.name, when: 'Today' },
+      ...transactions,
+    ]);
+  };
+  const handleRejectWish = (wishId) => {
+    setWishes(wishes.map(x => x.id === wishId ? { ...x, status: 'rejected' } : x));
+  };
+  const handleCreateTask = (data) => {
+    const newTask = {
+      id: 't' + Date.now(),
+      ...data,
+      color: 'oklch(0.93 0.06 ' + Math.floor(Math.random() * 360) + ')',
+    };
+    setTasks([newTask, ...tasks]);
+    setAddingTask(false);
+    showToast(`Task "${data.name}" added · ${data.autoApprove ? 'Auto-approved' : 'Approval required'}`);
+  };
+  const handleCreateWish = (data) => {
+    const newWish = {
+      id: 'cw' + Date.now(),
+      ...data,
+      color: 'oklch(0.93 0.07 ' + Math.floor(Math.random() * 360) + ')',
+    };
+    setWishCatalog([newWish, ...wishCatalog]);
+    setAddingWish(false);
+    showToast(`Wish "${data.name}" added to catalog ⭐`);
+  };
+
+  const switchRole = () => {
+    setViewRole(r => r === 'child' ? 'parent' : 'child');
+    setChildView('home');
+    setParentTab('home');
+  };
+
+  // ─── Render ────────────────────────────────────────────
+  let screen, tabBar;
+
+  if (authStage === 'pick') {
+    screen = <OnboardingScreen onPick={handlePickRole}/>;
+  } else if (authStage === 'login') {
+    screen = <LoginScreen role={pendingRole} onBack={handleBackFromLogin} onLogin={handleLogin}/>;
+  } else if (viewRole === 'child') {
+    if (childView === 'home') {
+      screen = <ChildHome
+        state={state}
+        onLogTask={() => setChildView('tasks')}
+        onWishes={() => setChildView('wishes')}
+        onSwitchRole={switchRole}/>;
+    } else if (childView === 'tasks') {
+      screen = <ChildTasks state={state} onLog={handleLog} onBack={() => setChildView('home')}/>;
+    } else if (childView === 'wishes') {
+      screen = <ChildWishes state={state} onOpenWish={setOpenWish} onBack={() => setChildView('home')}/>;
+    }
+    tabBar = null; // child app has no tab bar
+  } else if (viewRole === 'parent') {
+    if (parentTab === 'home')    screen = <ParentDashboard state={state} onApproveTask={handleApproveTask} onRejectTask={handleRejectTask} onApproveWish={handleApproveWish} onRejectWish={handleRejectWish} onSwitchRole={switchRole} onTab={setParentTab}/>;
+    if (parentTab === 'tasks')   screen = <ParentTasks state={state} onApproveTask={handleApproveTask} onRejectTask={handleRejectTask} onAddTask={() => setAddingTask(true)} onSwitchRole={switchRole}/>;
+    if (parentTab === 'wishes')  screen = <ParentWishes state={state} onApproveWish={handleApproveWish} onRejectWish={handleRejectWish} onAddWish={() => setAddingWish(true)} onSwitchRole={switchRole}/>;
+    if (parentTab === 'history') screen = <ParentHistory state={state} onSwitchRole={switchRole}/>;
+    tabBar = <ParentTabBar tab={parentTab} onTab={setParentTab}/>;
+  }
+
+  const screenLabel =
+    authStage === 'pick'  ? '01 Onboarding · Role pick' :
+    authStage === 'login' ? `02 ${pendingRole === 'parent' ? 'Parent' : 'Kid'} · Login` :
+    viewRole === 'child'  ? `Child · ${childView}` :
+                            `Parent · ${parentTab}`;
+
+  return (
+    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'center' }}>
+
+      <div style={{ maxWidth: 260, paddingTop: 30, fontFamily: '"Fredoka", sans-serif' }}>
+        <div style={{ fontSize: 32, fontWeight: 700, color: 'oklch(0.55 0.16 145)', lineHeight: 1, letterSpacing: -0.5 }}>SuperDino</div>
+        <div style={{ fontSize: 13, color: 'oklch(0.45 0.04 145)', marginTop: 6, fontFamily: '"Nunito", sans-serif', fontWeight: 600, lineHeight: 1.5 }}>
+          Draft v2 · Interactive prototype
+        </div>
+        <div style={{
+          marginTop: 18, padding: 14, borderRadius: 18, background: 'rgba(255,255,255,0.6)',
+          border: '2px solid rgba(20,40,30,0.06)',
+          fontFamily: '"Nunito", sans-serif', fontSize: 12, color: 'oklch(0.40 0.04 145)', lineHeight: 1.55,
+        }}>
+          <b style={{ fontFamily: '"Fredoka", sans-serif', fontSize: 13 }}>Try the full loop:</b>
+          <ol style={{ margin: '8px 0 0 0', padding: '0 0 0 18px' }}>
+            <li>Pick "I'm a Kid" → <b>Sign up</b> (any name/password)</li>
+            <li>Log <b>Brush teeth</b> → instant reward 🎉 (auto-approved)</li>
+            <li>Log <b>Read 20 min</b> → goes pending ⏳</li>
+            <li>Tap <b>👤 PARENT</b> → approve in Inbox</li>
+            <li>Switch back → eggs added silently to balance</li>
+            <li>In <b>Wishes</b>, submit one → parent grants it</li>
+          </ol>
+        </div>
+      </div>
+
+      <div style={{ position: 'relative' }} data-screen-label={screenLabel}>
+        <AndroidDevice width={412} height={892}>
+          <div className="device-content" style={{
+            width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
+            position: 'relative', overflow: 'hidden',
+            background: 'oklch(0.97 0.02 90)',
+          }}>
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+              {screen}
+            </div>
+            {tabBar}
+
+            {openWish && <WishSubmitSheet wish={openWish} state={state} onClose={() => setOpenWish(null)} onSubmit={handleSubmitWish}/>}
+            {addingTask && <AddTaskSheet onClose={() => setAddingTask(false)} onCreate={handleCreateTask}/>}
+            {addingWish && <AddWishSheet onClose={() => setAddingWish(false)} onCreate={handleCreateWish}/>}
+            {celebrate && <CelebrateOverlay amount={celebrate.amount} taskName={celebrate.taskName} onDone={() => setCelebrate(null)}/>}
+
+            {toast && (
+              <div style={{
+                position: 'absolute', bottom: 80, left: 18, right: 18, zIndex: 30,
+                background: 'oklch(0.25 0.04 145)', color: '#fff',
+                padding: '12px 16px', borderRadius: 16,
+                fontFamily: '"Fredoka", sans-serif', fontWeight: 600, fontSize: 13,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                animation: 'sd-pop-big 240ms cubic-bezier(.2,1.4,.4,1)',
+                textAlign: 'center',
+              }}>{toast}</div>
+            )}
+          </div>
+        </AndroidDevice>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
