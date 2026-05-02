@@ -157,51 +157,30 @@ export default function SuperDinoApp() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-8">
-      {/* Phone frame for desktop preview */}
-      <div className="w-full max-w-[412px] mx-auto">
-        <div
-          className="
-            relative bg-sd-cream rounded-[40px] overflow-hidden
-            shadow-[0_20px_60px_rgba(0,0,0,0.15),inset_0_0_0_4px_rgba(255,255,255,0.3)]
-            border-[6px] border-[#1a1a1a]
-          "
-          style={{ aspectRatio: '412/892' }}
-        >
-          {/* Notch */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-[#1a1a1a] rounded-b-2xl z-50" />
-
-          {/* Content */}
-          <div className="h-full flex flex-col pt-8 overflow-hidden">
-            {loading && <LoadingBar />}
-            <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col">
-              {screen}
-            </div>
-            {tabBar}
-
-            {/* Modals & Overlays */}
-            {openWish && (
-              <WishSubmitSheet
-                wish={openWish}
-                onClose={() => setOpenWish(null)}
-              />
-            )}
-            {addingTask && <AddTaskSheet onClose={() => setAddingTask(false)} />}
-            {addingWish && <AddWishSheet onClose={() => setAddingWish(false)} />}
-            {celebrate && (
-              <CelebrationOverlay
-                amount={celebrate.amount}
-                taskName={celebrate.taskName}
-                onDone={clearCelebrate}
-              />
-            )}
-            {toast && <Toast message={toast} onClose={clearToast} />}
-          </div>
-
-          {/* Home indicator */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-[rgba(0,0,0,0.2)] rounded-full" />
-        </div>
+    <div className="min-h-dvh flex flex-col bg-sd-cream relative">
+      {loading && <LoadingBar />}
+      <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col">
+        {screen}
       </div>
+      {tabBar}
+
+      {/* Modals & Overlays */}
+      {openWish && (
+        <WishSubmitSheet
+          wish={openWish}
+          onClose={() => setOpenWish(null)}
+        />
+      )}
+      {addingTask && <AddTaskSheet onClose={() => setAddingTask(false)} />}
+      {addingWish && <AddWishSheet onClose={() => setAddingWish(false)} />}
+      {celebrate && (
+        <CelebrationOverlay
+          amount={celebrate.amount}
+          taskName={celebrate.taskName}
+          onDone={clearCelebrate}
+        />
+      )}
+      {toast && <Toast message={toast} onClose={clearToast} />}
     </div>
   );
 }

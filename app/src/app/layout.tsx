@@ -20,11 +20,13 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.ico',
+    apple: '/icon.svg',
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'SuperDino',
+    startupImage: [],
   },
 };
 
