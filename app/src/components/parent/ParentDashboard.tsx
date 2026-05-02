@@ -43,7 +43,7 @@ export function ParentDashboard({ onTab, onLogout }: ParentDashboardProps) {
     .reduce((s, t) => s + t.amount, 0);
 
   return (
-    <div className="flex-1 flex flex-col bg-sd-cream overflow-y-auto">
+    <div className="flex flex-col bg-sd-cream">
       {/* Header */}
       <div className="px-4 py-3.5 pb-2 flex items-center gap-2.5">
         <Avatar name={user?.name || 'Parent'} color="sky" size={36} />

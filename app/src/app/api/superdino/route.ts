@@ -421,6 +421,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
     }
 
+    if (action === 'deleteTask') {
+      if (!payload.taskId) throw new Error('taskId is required');
+      const task = snapshot.tasks.find((item) => item.id === payload.taskId && item.familyId === familyId);
+      if (!task) throw new Error('Task not found in this family');
+      await db.from('tasks').delete().eq('id', payload.taskId);
+      return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
+    }
+
+    if (action === 'deleteWish') {
+      if (!payload.wishId) throw new Error('wishId is required');
+      const wish = snapshot.wishes.find((item) => item.id === payload.wishId && item.familyId === familyId);
+      if (!wish) throw new Error('Wish not found in this family');
+      await db.from('wishes').delete().eq('id', payload.wishId);
+      return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
+    }
+
     if (action === 'logCustomTask') {
       if (!payload.taskName?.trim() || !payload.emoji) throw new Error('Task name and emoji are required');
       const reward = Math.max(1, Math.min(10, Number(payload.suggestedReward) || 3));

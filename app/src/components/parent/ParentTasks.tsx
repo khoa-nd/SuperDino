@@ -10,7 +10,7 @@ interface ParentTasksProps {
 }
 
 export function ParentTasks({ onAddTask }: ParentTasksProps) {
-  const { user, users, tasks, taskLogs, approveTask, rejectTask, assignTask, refreshFromDb, loading } = useStore();
+  const { user, users, tasks, taskLogs, approveTask, rejectTask, assignTask, deleteTask, refreshFromDb, loading } = useStore();
   const [tab, setTab] = useState<'pending' | 'assigned' | 'manage'>('pending');
   const [assignChildId, setAssignChildId] = useState<string | null>(null);
   const [adjustingLogId, setAdjustingLogId] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
   });
 
   return (
-    <div className="flex-1 flex flex-col bg-sd-cream overflow-y-auto">
+    <div className="flex flex-col bg-sd-cream">
       {/* Header */}
       <div className="px-4 py-3.5 pb-2 flex items-center gap-2.5">
         <div className="flex-1">
@@ -261,8 +261,7 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
               {assignableTasks.map((task) => (
                 <Card
                   key={task.id}
-                  className="flex items-center gap-3.5 p-3.5 cursor-pointer hover:border-sd-green transition-colors"
-                  onClick={() => assignTask(task.id, assignChildId)}
+                  className="flex items-center gap-3.5 p-3.5"
                 >
                   <div
                     className="w-[48px] h-[48px] rounded-2xl flex items-center justify-center text-[24px]"
@@ -283,8 +282,17 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
                       )}
                     </div>
                   </div>
-                  <div className="bg-sd-egg-lt rounded-xl py-1.5 px-2.5 flex items-center gap-1 font-display font-bold text-sm text-sd-egg-dk">
-                    <Egg size={14} /> {task.reward}
+                  <div className="flex items-center gap-2">
+                    <div className="bg-sd-egg-lt rounded-xl py-1.5 px-2.5 flex items-center gap-1 font-display font-bold text-sm text-sd-egg-dk">
+                      <Egg size={14} /> {task.reward}
+                    </div>
+                    <Stamp
+                      size="sm"
+                      color="green"
+                      onClick={(e) => { e.stopPropagation(); assignTask(task.id, assignChildId); }}
+                    >
+                      Assign
+                    </Stamp>
                   </div>
                 </Card>
               ))}
@@ -319,6 +327,9 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
       {/* Manage tab */}
       {tab === 'manage' && (
         <div className="px-4 pb-4 flex flex-col gap-2">
+          <Stamp color="coral" block onClick={onAddTask} className="mb-1">
+            + Add new task
+          </Stamp>
           {familyTasks.map((task) => (
             <div
               key={task.id}
@@ -350,14 +361,25 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
                   )}
                 </div>
               </div>
-              <div className="bg-sd-egg-lt rounded-xl py-1.5 px-2.5 flex items-center gap-1 font-display font-bold text-sm text-sd-egg-dk">
-                <Egg size={14} /> {task.reward}
+              <div className="flex items-center gap-2">
+                <div className="bg-sd-egg-lt rounded-xl py-1.5 px-2.5 flex items-center gap-1 font-display font-bold text-sm text-sd-egg-dk">
+                  <Egg size={14} /> {task.reward}
+                </div>
+                <button
+                  onClick={() => deleteTask(task.id)}
+                  className="
+                    border-none bg-transparent text-sd-ink-mute cursor-pointer
+                    w-8 h-8 rounded-full flex items-center justify-center
+                    hover:bg-red-100 hover:text-red-500 transition-colors
+                    text-lg
+                  "
+                  title="Delete task"
+                >
+                  ×
+                </button>
               </div>
             </div>
           ))}
-          <Stamp color="coral" block onClick={onAddTask} className="mt-2">
-            + Add new task
-          </Stamp>
         </div>
       )}
     </div>

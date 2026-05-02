@@ -56,6 +56,12 @@ export const superdinoApi = {
   convertWish: (input: { userId: string; wishId: string }) =>
     request<AppSnapshot>({ action: 'convertWish', ...input }),
 
+  deleteTask: (input: { userId: string; taskId: string }) =>
+    request<AppSnapshot>({ action: 'deleteTask', ...input }),
+
+  deleteWish: (input: { userId: string; wishId: string }) =>
+    request<AppSnapshot>({ action: 'deleteWish', ...input }),
+
   logTask: (input: { userId: string; taskId: string }) =>
     request<AppSnapshot & { earned?: { amount: number; taskName: string } }>({ action: 'logTask', ...input }),
 

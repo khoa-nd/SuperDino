@@ -157,9 +157,9 @@ export default function SuperDinoApp() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col bg-sd-cream relative">
+    <div className="min-h-dvh flex flex-col bg-sd-cream">
       {loading && <LoadingBar />}
-      <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col">
+      <div className="flex-1 overflow-y-auto hide-scrollbar">
         {screen}
       </div>
       {tabBar}

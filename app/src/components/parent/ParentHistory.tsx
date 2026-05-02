@@ -57,7 +57,7 @@ export function ParentHistory({}: ParentHistoryProps) {
   ).length;
 
   return (
-    <div className="flex-1 flex flex-col bg-sd-cream overflow-y-auto">
+    <div className="flex flex-col bg-sd-cream">
       {/* Header */}
       <div className="px-4 py-3.5 pb-2 flex items-center gap-2.5">
         <div className="flex-1">

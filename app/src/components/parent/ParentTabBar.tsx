@@ -16,7 +16,7 @@ const tabs: { key: ParentTab; label: string; icon: string }[] = [
 
 export function ParentTabBar({ tab, onTab }: ParentTabBarProps) {
   return (
-    <div className="flex justify-around bg-white border-t-2 border-sd-coral-lt px-1.5 py-2 pb-1.5">
+    <div className="flex justify-around bg-white border-t-2 border-sd-coral-lt px-1.5 py-2 pb-1.5 safe-area-bottom">
       {tabs.map((item) => {
         const active = tab === item.key;
         return (

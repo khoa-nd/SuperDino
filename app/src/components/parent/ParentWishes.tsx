@@ -10,7 +10,7 @@ interface ParentWishesProps {
 }
 
 export function ParentWishes({ onAddWish }: ParentWishesProps) {
-  const { user, users, wishes, wishRequests, approveWish, rejectWish, refreshFromDb, convertWishToNormal, loading } = useStore();
+  const { user, users, wishes, wishRequests, approveWish, rejectWish, refreshFromDb, convertWishToNormal, deleteWish, loading } = useStore();
   const [tab, setTab] = useState<'pending' | 'catalog' | 'history'>('pending');
   const [adjustingReqId, setAdjustingReqId] = useState<string | null>(null);
   const [adjustAmount, setAdjustAmount] = useState(0);
@@ -28,7 +28,7 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
   const historyReqs = familyWishRequests.filter((w) => w.status !== 'pending');
 
   return (
-    <div className="flex-1 flex flex-col bg-sd-cream overflow-y-auto">
+    <div className="flex flex-col bg-sd-cream">
       {/* Header */}
       <div className="px-4 py-3.5 pb-2 flex items-center gap-2.5">
         <div className="flex-1">
@@ -183,6 +183,9 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
           <div className="font-body text-xs text-sd-ink-soft bg-sd-sky-lt p-3.5 rounded-[14px] mb-1">
             Set the rewards your kid can wish for. Tap to edit price.
           </div>
+          <Stamp color="coral" block onClick={onAddWish} className="mb-1">
+            + Add new wish
+          </Stamp>
           {familyWishes.map((wish) => (
             <div
               key={wish.id}
@@ -224,12 +227,21 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
                     Convert
                   </button>
                 )}
+                <button
+                  onClick={() => deleteWish(wish.id)}
+                  className="
+                    border-none bg-transparent text-sd-ink-mute cursor-pointer
+                    w-8 h-8 rounded-full flex items-center justify-center
+                    hover:bg-red-100 hover:text-red-500 transition-colors
+                    text-lg
+                  "
+                  title="Delete wish"
+                >
+                  ×
+                </button>
               </div>
             </div>
           ))}
-          <Stamp color="coral" block onClick={onAddWish} className="mt-2">
-            + Add new wish
-          </Stamp>
         </div>
       )}
 
