@@ -165,6 +165,7 @@ interface AppState {
   convertWishToNormal: (wishId: string) => void;
   deleteTask: (taskId: string) => void;
   deleteWish: (wishId: string) => void;
+  updateTask: (taskId: string, data: Partial<Omit<Task, 'id' | 'familyId' | 'createdAt'>>) => void;
 
   // UI
   showToast: (message: string) => void;
@@ -225,9 +226,21 @@ export const useStore = create<AppState>()(
         setTimeout(() => set({ toast: null }), 2000);
       },
 
-      switchRole: () => set((state) => ({
-        viewRole: state.viewRole === 'child' ? 'parent' : 'child',
-      })),
+      switchRole: () => {
+        const state = get();
+        const newRole = state.viewRole === 'child' ? 'parent' : 'child';
+        set({ viewRole: newRole });
+        // Auto-refresh to get latest data when switching roles
+        const userId = state.user?.id;
+        if (userId) {
+          set({ loading: true });
+          superdinoApi.snapshot(userId).then((snapshot) => {
+            set({ ...snapshotToState(snapshot), loading: false, viewRole: newRole });
+          }).catch(() => {
+            set({ loading: false });
+          });
+        }
+      },
 
       setActiveChild: (childId) => set({ activeChildId: childId }),
 
@@ -489,6 +502,20 @@ export const useStore = create<AppState>()(
         try {
           const snapshot = await superdinoApi.deleteWish({ userId: state.user.id, wishId });
           set({ ...snapshotToState(snapshot), loading: false, toast: 'Wish deleted' });
+          setTimeout(() => set({ toast: null }), 15000);
+        } catch (error) {
+          set({ toast: getErrorMessage(error), loading: false });
+          setTimeout(() => set({ toast: null }), 15000);
+        }
+      },
+
+      updateTask: async (taskId, data) => {
+        const state = get();
+        if (!state.user) return;
+        set({ loading: true });
+        try {
+          const snapshot = await superdinoApi.updateTask({ userId: state.user.id, taskId, data });
+          set({ ...snapshotToState(snapshot), loading: false, toast: 'Task updated' });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
           set({ toast: getErrorMessage(error), loading: false });

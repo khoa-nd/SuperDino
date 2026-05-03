@@ -14,7 +14,7 @@ interface ChildHomeProps {
 }
 
 export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: ChildHomeProps) {
-  const { user, users, activeChildId, eggs, tasks, taskLogs, wishRequests, wishes, transactions, streak, justEarned, refreshFromDb } = useStore();
+  const { user, users, activeChildId, eggs, tasks, taskLogs, wishRequests, wishes, transactions, streak, justEarned, refreshFromDb, completeAssignedTask, loading } = useStore();
   const dinoMood = justEarned ? 'cheer' : 'happy';
   const familyId = user?.familyId || 'f1';
   const currentChild = user?.role === 'child'
@@ -193,30 +193,52 @@ export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: Chil
         </Stamp>
       </div>
 
-      {/* Assigned tasks prompt */}
+      {/* Pending Assigned Tasks */}
       {assignedCount > 0 && (
-        <div className="px-4 pb-1">
-          <div
-            onClick={onLogTask}
-            className="
-              rounded-[22px] p-3.5 cursor-pointer
-              bg-sd-coral-lt border-2 border-sd-coral/30
-              flex items-center gap-3
-              shadow-[0_2px_0_rgba(180,80,80,0.15)]
-            "
+        <>
+          <SectionTitle
+            right={
+              <span className="font-display text-xs text-sd-coral-dk font-bold">
+                {assignedCount} pending
+              </span>
+            }
           >
-            <div className="text-2xl">📋</div>
-            <div className="flex-1">
-              <div className="font-display font-bold text-sm text-sd-coral-dk">
-                {assignedCount} task{assignedCount > 1 ? 's' : ''} assigned by parent
-              </div>
-              <div className="font-body text-xs text-sd-coral-dk/70 mt-0.5">
-                Tap to view and mark as done
-              </div>
-            </div>
-            <div className="font-display font-bold text-xs text-sd-coral-dk">View ›</div>
+            Assigned to you
+          </SectionTitle>
+          <div className="px-4 flex flex-col gap-2 pb-1">
+            {assignedLogs.map((log) => {
+              const task = familyTasks.find((t) => t.id === log.taskId);
+              if (!task) return null;
+              return (
+                <div
+                  key={log.id}
+                  className="bg-white rounded-[18px] p-3 flex items-center gap-3 border-2 border-sd-coral-lt shadow-[0_2px_0_rgba(200,100,80,0.1)]"
+                >
+                  <div
+                    className="w-[42px] h-[42px] rounded-[14px] flex items-center justify-center text-[22px]"
+                    style={{ background: task.color }}
+                  >
+                    {task.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display font-bold text-sm text-sd-ink">{task.name}</div>
+                    <div className="font-body text-xs text-sd-coral-dk font-semibold mt-0.5">
+                      +{task.reward} eggs
+                    </div>
+                  </div>
+                  <Stamp
+                    size="sm"
+                    color="coral"
+                    loading={loading}
+                    onClick={() => completeAssignedTask(log.id)}
+                  >
+                    Done
+                  </Stamp>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        </>
       )}
 
       {/* History */}
@@ -227,7 +249,7 @@ export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: Chil
           </span>
         }
       >
-        Recent activity
+        Recent activities
       </SectionTitle>
 
       {/* Filter band */}

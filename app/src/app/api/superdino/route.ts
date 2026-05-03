@@ -437,6 +437,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
     }
 
+    if (action === 'updateTask') {
+      if (!payload.taskId || !payload.data) throw new Error('taskId and data are required');
+      const task = snapshot.tasks.find((item) => item.id === payload.taskId && item.familyId === familyId);
+      if (!task) throw new Error('Task not found in this family');
+      const updates: Record<string, unknown> = {};
+      if (payload.data.name) updates.name = payload.data.name;
+      if (payload.data.emoji) updates.emoji = payload.data.emoji;
+      if (payload.data.reward != null) updates.reward = Math.max(1, Math.min(50, Number(payload.data.reward)));
+      if (payload.data.category) updates.category = payload.data.category;
+      if (payload.data.autoApprove != null) updates.auto_approve = Boolean(payload.data.autoApprove);
+      if (payload.data.color) updates.color = payload.data.color;
+      await db.from('tasks').update(updates).eq('id', payload.taskId);
+      return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
+    }
+
     if (action === 'logCustomTask') {
       if (!payload.taskName?.trim() || !payload.emoji) throw new Error('Task name and emoji are required');
       const reward = Math.max(1, Math.min(50, Number(payload.suggestedReward) || 3));
@@ -464,12 +479,13 @@ export async function POST(request: Request) {
       if (!payload.taskId || !payload.assignToUserId) throw new Error('taskId and assignToUserId are required');
       const task = snapshot.tasks.find((item) => item.id === payload.taskId);
       if (!task) throw new Error('Task not found in this family');
-      await db.from('task_logs').insert({
+      const { error: assignErr } = await db.from('task_logs').insert({
         id: id(),
         task_id: task.id,
         user_id: payload.assignToUserId,
         status: 'assigned',
       });
+      if (assignErr) throw new Error(assignErr.message);
       return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
     }
 

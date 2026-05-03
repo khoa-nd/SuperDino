@@ -21,7 +21,7 @@ const filters: { key: 'all' | TaskCategory; label: string }[] = [
 const customEmojis = ['✨', '📝', '🎯', '💡', '🌟', '🎨', '💪', '🏆', '🎵', '🌱', '❤️', '📌'];
 
 export function ChildTasks({ onBack }: ChildTasksProps) {
-  const { user, users, activeChildId, tasks, taskLogs, logTask, logCustomTask, completeAssignedTask, loading } = useStore();
+  const { user, users, activeChildId, tasks, taskLogs, logTask, logCustomTask, loading } = useStore();
   const [filter, setFilter] = useState<'all' | TaskCategory>('all');
   const [showCustom, setShowCustom] = useState(false);
   const [customName, setCustomName] = useState('');
@@ -35,11 +35,6 @@ export function ChildTasks({ onBack }: ChildTasksProps) {
       users.find((u) => u.role === 'child' && u.familyId === familyId);
   const childId = currentChild?.id;
   const familyTasks = tasks.filter((task) => task.familyId === familyId);
-
-  // Assigned tasks (parent-assigned, waiting for child to do)
-  const assignedLogs = taskLogs.filter(
-    (l) => l.status === 'assigned' && l.userId === childId
-  );
 
   // Non-assigned tasks from catalog
   const nonOtherTasks = familyTasks.filter((t) => t.category !== 'other');
@@ -60,48 +55,6 @@ export function ChildTasks({ onBack }: ChildTasksProps) {
   return (
     <div className="flex-1 flex flex-col bg-sd-cream">
       <BackHeader title="Log a task" subtitle="Tap one when you finish it" onBack={onBack} />
-
-      {/* Assigned by parent section */}
-      {assignedLogs.length > 0 && (
-        <>
-          <div className="px-4 pb-1">
-            <div className="font-display font-bold text-xs text-sd-coral-dk tracking-wider uppercase mb-1">
-              📋 Assigned by parent
-            </div>
-          </div>
-          <div className="px-4 pb-3 flex flex-col gap-2">
-            {assignedLogs.map((log) => {
-              const task = familyTasks.find((t) => t.id === log.taskId);
-              if (!task) return null;
-              return (
-                <Card key={log.id} className="flex items-center gap-3.5 p-3.5 border-2 border-sd-coral-lt">
-                  <div
-                    className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center text-[26px]"
-                    style={{ background: task.color }}
-                  >
-                    {task.emoji}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-display font-bold text-base text-sd-ink">{task.name}</div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <EggBadge count={`+${task.reward}`} size={14} />
-                      <Pill variant="coral">👤 Parent</Pill>
-                    </div>
-                  </div>
-                  <Stamp
-                    size="sm"
-                    color="coral"
-                    loading={loading}
-                    onClick={() => completeAssignedTask(log.id)}
-                  >
-                    Done
-                  </Stamp>
-                </Card>
-              );
-            })}
-          </div>
-        </>
-      )}
 
       {/* Filters */}
       <div className="px-4 flex gap-1.5 overflow-x-auto pb-1.5 hide-scrollbar">

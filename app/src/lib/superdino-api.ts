@@ -62,6 +62,9 @@ export const superdinoApi = {
   deleteWish: (input: { userId: string; wishId: string }) =>
     request<AppSnapshot>({ action: 'deleteWish', ...input }),
 
+  updateTask: (input: { userId: string; taskId: string; data: Partial<Omit<Task, 'id' | 'familyId' | 'createdAt'>> }) =>
+    request<AppSnapshot>({ action: 'updateTask', ...input }),
+
   logTask: (input: { userId: string; taskId: string }) =>
     request<AppSnapshot & { earned?: { amount: number; taskName: string } }>({ action: 'logTask', ...input }),
 
