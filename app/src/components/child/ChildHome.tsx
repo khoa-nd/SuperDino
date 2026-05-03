@@ -223,7 +223,7 @@ export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: Chil
                   <div className="flex-1 min-w-0">
                     <div className="font-display font-bold text-sm text-sd-ink">{task.name}</div>
                     <div className="font-body text-xs text-sd-coral-dk font-semibold mt-0.5">
-                      +{task.reward} eggs
+                      +{task.reward} eggs{log.assignedBy ? ` · By ${log.assignedBy}` : ''}
                     </div>
                   </div>
                   <Stamp

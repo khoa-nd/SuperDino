@@ -40,6 +40,7 @@ export interface TaskLog {
   userId: string;
   status: TaskLogStatus;
   timestamp: string;
+  assignedBy?: string;
   task?: Task; // Joined data
 }
 

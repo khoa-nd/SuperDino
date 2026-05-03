@@ -44,6 +44,7 @@ create table if not exists public.task_logs (
   task_id text not null references public.tasks(id) on delete cascade,
   user_id text not null references public.profiles(id) on delete cascade,
   status text not null check (status in ('assigned', 'pending', 'approved', 'auto-approved', 'rejected')),
+  assigned_by text,
   timestamp timestamptz not null default now()
 );
 

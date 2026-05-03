@@ -29,7 +29,7 @@ type DbFamily = { id: string; name: string; code: string; created_at: string };
 type DbProfile = { id: string; username: string; name: string; role: UserRole; family_id: string | null; password_hash: string | null; created_at: string };
 type DbTask = { id: string; name: string; emoji: string; reward: number; category: TaskCategory; auto_approve: boolean; color: string; family_id: string; created_at: string };
 type DbWish = { id: string; name: string; emoji: string; cost: number; category?: WishCategory; color: string; family_id: string; created_at: string };
-type DbTaskLog = { id: string; task_id: string; user_id: string; status: TaskLogStatus; timestamp: string };
+type DbTaskLog = { id: string; task_id: string; user_id: string; status: TaskLogStatus; assigned_by?: string; timestamp: string };
 type DbWishRequest = { id: string; wish_id: string; user_id: string; status: WishRequestStatus; timestamp: string };
 type DbTransaction = { id: string; user_id: string; type: 'earn' | 'spend'; amount: number; label: string; timestamp: string };
 
@@ -124,6 +124,7 @@ const mapTaskLog = (log: DbTaskLog): TaskLog => ({
   userId: log.user_id,
   status: log.status,
   timestamp: log.timestamp,
+  assignedBy: log.assigned_by,
 });
 
 const mapWishRequest = (request: DbWishRequest): WishRequest => ({
@@ -484,6 +485,7 @@ export async function POST(request: Request) {
         task_id: task.id,
         user_id: payload.assignToUserId,
         status: 'assigned',
+        assigned_by: snapshot.user.name,
       });
       if (assignErr) throw new Error(assignErr.message);
       return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
