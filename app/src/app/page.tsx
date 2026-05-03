@@ -161,12 +161,12 @@ export default function SuperDinoApp() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col bg-sd-cream">
+    <div className="h-dvh flex flex-col bg-sd-cream overflow-hidden">
       {loading && <LoadingBar />}
       <div className="flex-1 overflow-y-auto hide-scrollbar">
         {screen}
-        {tabBar}
       </div>
+      {tabBar}
 
       {/* Modals & Overlays */}
       {openWish && (

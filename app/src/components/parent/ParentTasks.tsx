@@ -50,7 +50,7 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
       <div className="px-4 pb-2.5">
         <div className="bg-white rounded-full p-1 flex gap-1 border-2 border-[rgba(20,40,30,0.05)]">
           {([
-            { key: 'pending' as const, label: `Pending Approval (${pendingLogs.length})` },
+            { key: 'pending' as const, label: `Pending (${pendingLogs.length})` },
             { key: 'assigned' as const, label: `Assigned (${assignedLogs.length})` },
             { key: 'manage' as const, label: 'Manage' },
           ]).map((t) => (
