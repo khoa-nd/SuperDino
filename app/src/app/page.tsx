@@ -165,8 +165,8 @@ export default function SuperDinoApp() {
       {loading && <LoadingBar />}
       <div className="flex-1 overflow-y-auto hide-scrollbar">
         {screen}
+        {tabBar}
       </div>
-      {tabBar}
 
       {/* Modals & Overlays */}
       {openWish && (
