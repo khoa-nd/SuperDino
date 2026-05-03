@@ -127,6 +127,23 @@ export function ChildTasks({ onBack }: ChildTasksProps) {
 
       {/* Task list */}
       <div className="flex-1 px-4 py-3 flex flex-col gap-2.5">
+        {/* Other custom task option — at top */}
+        {filter === 'all' && (
+          <Card
+            className="flex items-center gap-3.5 p-3.5 cursor-pointer border-2 border-dashed border-[rgba(20,40,30,0.10)] hover:border-sd-coral transition-colors"
+            onClick={() => setShowCustom(true)}
+          >
+            <div className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center text-[26px] bg-sd-coral-lt">
+              ✨
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-display font-bold text-base text-sd-ink">Other</div>
+              <div className="font-body text-xs text-sd-ink-soft mt-0.5">Describe your own task</div>
+            </div>
+            <Pill variant="coral">👤 Approval</Pill>
+          </Card>
+        )}
+
         {filtered.map((task) => {
           const pending = isPending(task.id);
           return (
@@ -161,23 +178,6 @@ export function ChildTasks({ onBack }: ChildTasksProps) {
             </Card>
           );
         })}
-
-        {/* Other custom task option */}
-        {filter === 'all' && (
-          <Card
-            className="flex items-center gap-3.5 p-3.5 cursor-pointer border-2 border-dashed border-[rgba(20,40,30,0.10)] hover:border-sd-coral transition-colors"
-            onClick={() => setShowCustom(true)}
-          >
-            <div className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center text-[26px] bg-sd-coral-lt">
-              ✨
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-display font-bold text-base text-sd-ink">Other</div>
-              <div className="font-body text-xs text-sd-ink-soft mt-0.5">Describe your own task</div>
-            </div>
-            <Pill variant="coral">👤 Approval</Pill>
-          </Card>
-        )}
 
         {filtered.length === 0 && filter !== 'all' && (
           <Card className="text-center py-4">
@@ -223,18 +223,24 @@ export function ChildTasks({ onBack }: ChildTasksProps) {
             </FormField>
 
             <FormField label="How many eggs?" className="mb-4">
-              <div className="bg-white rounded-[14px] p-3 border-2 border-[rgba(20,40,30,0.08)] flex items-center gap-2.5">
-                <Egg size={28} />
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  value={customReward}
-                  onChange={(e) => setCustomReward(Number(e.target.value))}
-                  className="flex-1 accent-sd-coral"
-                />
-                <div className="font-display font-bold text-2xl text-sd-egg-dk min-w-[30px] text-right">
-                  {customReward}
+              <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center gap-1 bg-sd-egg-lt rounded-xl px-2 py-1.5">
+                  <Egg size={18} />
+                  <button
+                    onClick={() => setCustomReward(Math.max(1, customReward - 1))}
+                    className="border-none bg-white/60 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer font-display font-bold text-lg text-sd-egg-dk hover:bg-white transition-colors"
+                  >
+                    −
+                  </button>
+                  <span className="font-display font-bold text-xl text-sd-egg-dk min-w-[28px] text-center">
+                    {customReward}
+                  </span>
+                  <button
+                    onClick={() => setCustomReward(Math.min(50, customReward + 1))}
+                    className="border-none bg-white/60 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer font-display font-bold text-lg text-sd-egg-dk hover:bg-white transition-colors"
+                  >
+                    +
+                  </button>
                 </div>
               </div>
             </FormField>

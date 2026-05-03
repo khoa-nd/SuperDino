@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Avatar, Dino, Egg, Stamp, Sparkle, Card, SectionTitle, StatusPill } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { formatRelativeTime } from '@/lib/utils';
@@ -9,9 +10,10 @@ interface ChildHomeProps {
   onLogTask: () => void;
   onWishes: () => void;
   onLogout: () => void;
+  onStreakClick: () => void;
 }
 
-export function ChildHome({ onLogTask, onWishes, onLogout }: ChildHomeProps) {
+export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: ChildHomeProps) {
   const { user, users, activeChildId, eggs, tasks, taskLogs, wishRequests, wishes, transactions, streak, justEarned, refreshFromDb } = useStore();
   const dinoMood = justEarned ? 'cheer' : 'happy';
   const familyId = user?.familyId || 'f1';
@@ -64,6 +66,34 @@ export function ChildHome({ onLogTask, onWishes, onLogout }: ChildHomeProps) {
   const items = [...taskItems, ...wishItems].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
+
+  // Activity filter
+  type ActivityFilter = 'today' | 'yesterday' | 'custom';
+  const [activityFilter, setActivityFilter] = useState<ActivityFilter>('today');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  const filteredItems = (() => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterdayStart = new Date(todayStart.getTime() - 86400000);
+    const todayEnd = new Date(todayStart.getTime() + 86400000);
+
+    return items.filter((item) => {
+      const ts = new Date(item.timestamp);
+      switch (activityFilter) {
+        case 'today':
+          return ts >= todayStart && ts < todayEnd;
+        case 'yesterday':
+          return ts >= yesterdayStart && ts < todayStart;
+        case 'custom':
+          if (!dateFrom && !dateTo) return true;
+          if (dateFrom && ts < new Date(dateFrom)) return false;
+          if (dateTo && ts > new Date(dateTo + 'T23:59:59')) return false;
+          return true;
+      }
+    });
+  })();
 
   const earned = childTransactions.filter((t) => t.type === 'earn').reduce((s, t) => s + t.amount, 0);
   const spent = childTransactions.filter((t) => t.type === 'spend').reduce((s, t) => s + t.amount, 0);
@@ -142,7 +172,13 @@ export function ChildHome({ onLogTask, onWishes, onLogout }: ChildHomeProps) {
           <div className="flex gap-2 mt-3">
             <Stat label="Earned" value={`+${earned}`} color="text-sd-green-dk" />
             <Stat label="Spent" value={`−${spent}`} color="text-sd-coral-dk" />
-            <Stat label="Streak" value={`${streak}d 🔥`} color="text-sd-egg-dk" />
+            <div className="flex-1 bg-white/70 rounded-[14px] py-2 px-2.5 text-center cursor-pointer relative" onClick={onStreakClick}>
+              <div className="font-body text-[10px] font-bold text-sd-ink-soft tracking-wider uppercase">Streak</div>
+              <div className="font-display text-lg font-bold text-sd-egg-dk">{streak}d 🔥</div>
+              <span className="absolute -top-1.5 -right-1.5 bg-sd-coral text-white font-display font-bold text-[9px] px-1.5 py-0.5 rounded-full leading-none animate-pop">
+                NEW
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -187,15 +223,68 @@ export function ChildHome({ onLogTask, onWishes, onLogout }: ChildHomeProps) {
       <SectionTitle
         right={
           <span className="font-display text-xs text-sd-ink-mute font-bold">
-            {items.length} item{items.length !== 1 ? 's' : ''}
+            {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''}
           </span>
         }
       >
         Recent activity
       </SectionTitle>
 
+      {/* Filter band */}
+      <div className="px-4 flex gap-1.5 pb-1.5 flex-wrap">
+        {([
+          { key: 'today' as const, label: 'Today' },
+          { key: 'yesterday' as const, label: 'Yesterday' },
+          { key: 'custom' as const, label: 'Custom' },
+        ]).map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setActivityFilter(f.key)}
+            className={`
+              border-none cursor-pointer whitespace-nowrap
+              px-3 py-1.5 rounded-full
+              font-display font-bold text-xs
+              transition-colors
+              ${activityFilter === f.key
+                ? 'bg-sd-ink text-white'
+                : 'bg-white text-sd-ink shadow-[inset_0_0_0_2px_rgba(20,40,30,0.08)]'
+              }
+            `}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Custom date range */}
+      {activityFilter === 'custom' && (
+        <div className="px-4 pb-2 flex items-center gap-2">
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="
+              flex-1 border-2 border-[rgba(20,40,30,0.08)] rounded-xl
+              px-3 py-2 font-body text-xs bg-white text-sd-ink
+              outline-none focus:border-sd-green
+            "
+          />
+          <span className="font-body text-xs text-sd-ink-mute">to</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="
+              flex-1 border-2 border-[rgba(20,40,30,0.08)] rounded-xl
+              px-3 py-2 font-body text-xs bg-white text-sd-ink
+              outline-none focus:border-sd-green
+            "
+          />
+        </div>
+      )}
+
       <div className="px-4 flex flex-col gap-2">
-        {items.length === 0 && (
+        {filteredItems.length === 0 && (
           <Card className="text-center py-5">
             <div className="text-3xl">🦕</div>
             <div className="font-display font-bold text-[15px] text-sd-ink mt-1.5">Nothing here yet</div>
@@ -205,7 +294,7 @@ export function ChildHome({ onLogTask, onWishes, onLogout }: ChildHomeProps) {
           </Card>
         )}
 
-        {items.map((item) => (
+        {filteredItems.map((item) => (
           <div
             key={item.id}
             className="

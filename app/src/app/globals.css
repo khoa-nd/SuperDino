@@ -130,6 +130,11 @@ body {
   100% { transform: translateX(400%); }
 }
 
+@keyframes marquee {
+  0% { transform: translateX(120vw); }
+  100% { transform: translateX(-120px); }
+}
+
 /* Animation utilities */
 .animate-pop {
   animation: sd-pop 0.6s ease;

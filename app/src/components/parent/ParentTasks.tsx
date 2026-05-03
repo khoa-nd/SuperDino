@@ -13,8 +13,7 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
   const { user, users, tasks, taskLogs, approveTask, rejectTask, assignTask, deleteTask, refreshFromDb, loading } = useStore();
   const [tab, setTab] = useState<'pending' | 'assigned' | 'manage'>('pending');
   const [assignChildId, setAssignChildId] = useState<string | null>(null);
-  const [adjustingLogId, setAdjustingLogId] = useState<string | null>(null);
-  const [adjustAmount, setAdjustAmount] = useState(0);
+  const [eggAmounts, setEggAmounts] = useState<Record<string, number>>({});
   const familyId = user?.familyId || 'f1';
   const familyTasks = tasks.filter((task) => task.familyId === familyId);
   const linkedKids = users.filter((u) => u.role === 'child' && u.familyId === familyId);
@@ -101,65 +100,10 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
           {pendingLogs.map((log) => {
             const task = familyTasks.find((t) => t.id === log.taskId);
             if (!task) return null;
-            const isAdjusting = adjustingLogId === log.id;
+            const currentAmount = eggAmounts[log.id] ?? task.reward;
 
-            const handleStartAdjust = () => {
-              setAdjustingLogId(log.id);
-              setAdjustAmount(task.reward);
-            };
-
-            const handleConfirmApprove = () => {
-              approveTask(log.id, adjustAmount);
-              setAdjustingLogId(null);
-            };
-
-            const handleCancelAdjust = () => {
-              setAdjustingLogId(null);
-              setAdjustAmount(0);
-            };
-
-            if (isAdjusting) {
-              return (
-                <div
-                  key={log.id}
-                  className="bg-white rounded-[22px] p-3.5 border-2 border-[rgba(20,40,30,0.05)] shadow-[0_2px_0_rgba(20,40,30,0.05)]"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className="w-[44px] h-[44px] rounded-xl flex items-center justify-center text-[22px]"
-                      style={{ background: task.color }}
-                    >
-                      {task.emoji}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-display font-bold text-base text-sd-ink">{task.name}</div>
-                      <div className="font-body text-xs text-sd-ink-soft mt-0.5">
-                        {childName(log.userId)} · {formatRelativeTime(log.timestamp)}
-                      </div>
-                    </div>
-                    <div className="bg-sd-egg-lt rounded-xl p-2.5 flex items-center gap-1.5">
-                      <Egg size={14} />
-                      <input
-                        type="number"
-                        min={1}
-                        max={50}
-                        value={adjustAmount}
-                        onChange={(e) => setAdjustAmount(Math.max(1, Number(e.target.value)))}
-                        className="w-[44px] border-none bg-transparent font-display font-bold text-xl text-sd-egg-dk text-center outline-none"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Stamp color="paper" size="sm" block loading={loading} onClick={handleCancelAdjust}>
-                      Cancel
-                    </Stamp>
-                    <Stamp color="green" size="sm" block loading={loading} onClick={handleConfirmApprove}>
-                      ✓ Approve {adjustAmount !== task.reward ? `(${adjustAmount > task.reward ? '+' : ''}${adjustAmount - task.reward})` : ''}
-                    </Stamp>
-                  </div>
-                </div>
-              );
-            }
+            const inc = () => setEggAmounts((prev) => ({ ...prev, [log.id]: Math.min(50, currentAmount + 1) }));
+            const dec = () => setEggAmounts((prev) => ({ ...prev, [log.id]: Math.max(1, currentAmount - 1) }));
 
             return (
               <div
@@ -181,12 +125,35 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
                   </div>
                   <EggBadge count={`+${task.reward}`} size={14} />
                 </div>
-                <div className="flex gap-2 mt-3">
+
+                {/* Egg adjuster */}
+                <div className="flex items-center justify-center gap-2 mt-3 mb-1">
+                  <div className="flex items-center gap-1 bg-sd-egg-lt rounded-xl px-2 py-1.5">
+                    <Egg size={16} />
+                    <button
+                      onClick={dec}
+                      className="border-none bg-white/60 rounded-full w-7 h-7 flex items-center justify-center cursor-pointer font-display font-bold text-base text-sd-egg-dk hover:bg-white transition-colors"
+                    >
+                      −
+                    </button>
+                    <span className="font-display font-bold text-lg text-sd-egg-dk min-w-[28px] text-center">
+                      {currentAmount}
+                    </span>
+                    <button
+                      onClick={inc}
+                      className="border-none bg-white/60 rounded-full w-7 h-7 flex items-center justify-center cursor-pointer font-display font-bold text-base text-sd-egg-dk hover:bg-white transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
                   <Stamp color="paper" size="sm" block loading={loading} onClick={() => rejectTask(log.id)} className="text-sd-coral-dk">
                     ✕ Reject
                   </Stamp>
-                  <Stamp color="green" size="sm" block loading={loading} onClick={handleStartAdjust}>
-                    ✓ Approve
+                  <Stamp color="green" size="sm" block loading={loading} onClick={() => approveTask(log.id, currentAmount)}>
+                    ✓ Approve{currentAmount !== task.reward ? ` (${currentAmount > task.reward ? '+' : ''}${currentAmount - task.reward})` : ''}
                   </Stamp>
                 </div>
               </div>

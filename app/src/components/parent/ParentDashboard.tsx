@@ -233,54 +233,10 @@ interface ApprovalCardProps {
 }
 
 function ApprovalCard({ icon, iconBg, title, subtitle, defaultAmount, meta, onApprove, onReject, approveColor, allowAdjust, loading }: ApprovalCardProps) {
-  const [adjusting, setAdjusting] = useState(false);
   const [adjustAmount, setAdjustAmount] = useState(defaultAmount);
 
-  const handleApproveClick = () => {
-    if (allowAdjust) {
-      setAdjusting(true);
-    } else {
-      onApprove(defaultAmount);
-    }
-  };
-
-  if (adjusting) {
-    return (
-      <div className="bg-white rounded-[22px] p-3.5 border-2 border-[rgba(20,40,30,0.05)] shadow-[0_2px_0_rgba(20,40,30,0.05)]">
-        <div className="flex items-center gap-3 mb-3">
-          <div
-            className="w-[44px] h-[44px] rounded-xl flex items-center justify-center text-[22px]"
-            style={{ background: iconBg }}
-          >
-            {icon}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-display font-bold text-base text-sd-ink">{title}</div>
-            <div className="font-body text-xs text-sd-ink-soft">{subtitle}</div>
-          </div>
-          <div className="bg-sd-egg-lt rounded-xl p-2.5 flex items-center gap-1.5">
-            <Egg size={14} />
-            <input
-              type="number"
-              min={1}
-              max={50}
-              value={adjustAmount}
-              onChange={(e) => setAdjustAmount(Math.max(1, Number(e.target.value)))}
-              className="w-[44px] border-none bg-transparent font-display font-bold text-xl text-sd-egg-dk text-center outline-none"
-            />
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Stamp color="paper" size="sm" block loading={loading} onClick={() => { setAdjusting(false); setAdjustAmount(defaultAmount); }}>
-            Cancel
-          </Stamp>
-          <Stamp color={approveColor} size="sm" block loading={loading} onClick={() => onApprove(adjustAmount)}>
-            ✓ Approve {adjustAmount !== defaultAmount ? `(${adjustAmount > defaultAmount ? '+' : ''}${adjustAmount - defaultAmount})` : ''}
-          </Stamp>
-        </div>
-      </div>
-    );
-  }
+  const inc = () => setAdjustAmount((a) => Math.min(50, a + 1));
+  const dec = () => setAdjustAmount((a) => Math.max(1, a - 1));
 
   return (
     <div className="bg-white rounded-[22px] p-3.5 border-2 border-[rgba(20,40,30,0.05)] shadow-[0_2px_0_rgba(20,40,30,0.05)]">
@@ -297,12 +253,53 @@ function ApprovalCard({ icon, iconBg, title, subtitle, defaultAmount, meta, onAp
         </div>
         {meta}
       </div>
-      <div className="flex gap-2 mt-3">
+
+      {/* Egg adjuster for tasks */}
+      {allowAdjust && (
+        <div className="flex items-center justify-center gap-2 mt-3 mb-1">
+          <div className="flex items-center gap-1 bg-sd-egg-lt rounded-xl px-2 py-1.5">
+            <Egg size={16} />
+            <button
+              onClick={dec}
+              className="
+                border-none bg-white/60 rounded-full w-7 h-7
+                flex items-center justify-center cursor-pointer
+                font-display font-bold text-base text-sd-egg-dk
+                hover:bg-white transition-colors
+              "
+            >
+              −
+            </button>
+            <span className="font-display font-bold text-lg text-sd-egg-dk min-w-[28px] text-center">
+              {adjustAmount}
+            </span>
+            <button
+              onClick={inc}
+              className="
+                border-none bg-white/60 rounded-full w-7 h-7
+                flex items-center justify-center cursor-pointer
+                font-display font-bold text-base text-sd-egg-dk
+                hover:bg-white transition-colors
+              "
+            >
+              +
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-2 mt-2">
         <Stamp color="paper" size="sm" block loading={loading} onClick={onReject} className="text-sd-coral-dk">
           ✕ Reject
         </Stamp>
-        <Stamp color={approveColor} size="sm" block loading={loading} onClick={handleApproveClick}>
-          ✓ Approve
+        <Stamp
+          color={approveColor}
+          size="sm"
+          block
+          loading={loading}
+          onClick={() => onApprove(adjustAmount)}
+        >
+          ✓ Approve{allowAdjust && adjustAmount !== defaultAmount ? ` (${adjustAmount > defaultAmount ? '+' : ''}${adjustAmount - defaultAmount})` : ''}
         </Stamp>
       </div>
     </div>

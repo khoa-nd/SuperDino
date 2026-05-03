@@ -439,7 +439,7 @@ export async function POST(request: Request) {
 
     if (action === 'logCustomTask') {
       if (!payload.taskName?.trim() || !payload.emoji) throw new Error('Task name and emoji are required');
-      const reward = Math.max(1, Math.min(10, Number(payload.suggestedReward) || 3));
+      const reward = Math.max(1, Math.min(50, Number(payload.suggestedReward) || 3));
       const customTaskId = id();
       await db.from('tasks').insert({
         id: customTaskId,

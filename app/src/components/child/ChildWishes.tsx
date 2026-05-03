@@ -37,6 +37,34 @@ export function ChildWishes({ onBack, onOpenWish }: ChildWishesProps) {
   const childTx = childId ? transactions.filter((tx) => tx.userId === childId) : [];
   const childBalance = childTx.reduce((sum, tx) => sum + (tx.type === 'earn' ? tx.amount : -tx.amount), 0);
 
+  // Wish request filter
+  type WishFilter = 'today' | 'yesterday' | 'custom';
+  const [wishFilter, setWishFilter] = useState<WishFilter>('today');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  const filteredRequests = (() => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterdayStart = new Date(todayStart.getTime() - 86400000);
+    const todayEnd = new Date(todayStart.getTime() + 86400000);
+
+    return childWishRequests.filter((req) => {
+      const ts = new Date(req.timestamp);
+      switch (wishFilter) {
+        case 'today':
+          return ts >= todayStart && ts < todayEnd;
+        case 'yesterday':
+          return ts >= yesterdayStart && ts < todayStart;
+        case 'custom':
+          if (!dateFrom && !dateTo) return true;
+          if (dateFrom && ts < new Date(dateFrom)) return false;
+          if (dateTo && ts > new Date(dateTo + 'T23:59:59')) return false;
+          return true;
+      }
+    });
+  })();
+
   const handleCustomSubmit = () => {
     if (!customName.trim()) return;
     if (customCost > childBalance) {
@@ -115,14 +143,68 @@ export function ChildWishes({ onBack, onOpenWish }: ChildWishesProps) {
       </div>
 
       {/* My wishes (requests) */}
-      <SectionTitle>My wishes</SectionTitle>
+      <SectionTitle
+        right={
+          <span className="font-display text-xs text-sd-ink-mute font-bold">
+            {filteredRequests.length} item{filteredRequests.length !== 1 ? 's' : ''}
+          </span>
+        }
+      >
+        My wishes
+      </SectionTitle>
+
+      {/* Filter band */}
+      <div className="px-4 flex gap-1.5 pb-1.5 flex-wrap">
+        {([
+          { key: 'today' as const, label: 'Today' },
+          { key: 'yesterday' as const, label: 'Yesterday' },
+          { key: 'custom' as const, label: 'Custom' },
+        ]).map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setWishFilter(f.key)}
+            className={`
+              border-none cursor-pointer whitespace-nowrap
+              px-3 py-1.5 rounded-full
+              font-display font-bold text-xs
+              transition-colors
+              ${wishFilter === f.key
+                ? 'bg-sd-ink text-white'
+                : 'bg-white text-sd-ink shadow-[inset_0_0_0_2px_rgba(20,40,30,0.08)]'
+              }
+            `}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Custom date range */}
+      {wishFilter === 'custom' && (
+        <div className="px-4 pb-2 flex items-center gap-2">
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="flex-1 border-2 border-[rgba(20,40,30,0.08)] rounded-xl px-3 py-2 font-body text-xs bg-white text-sd-ink outline-none focus:border-sd-green"
+          />
+          <span className="font-body text-xs text-sd-ink-mute">to</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="flex-1 border-2 border-[rgba(20,40,30,0.08)] rounded-xl px-3 py-2 font-body text-xs bg-white text-sd-ink outline-none focus:border-sd-green"
+          />
+        </div>
+      )}
+
       <div className="px-4 pb-4 flex flex-col gap-2">
-        {childWishRequests.length === 0 && (
+        {filteredRequests.length === 0 && (
           <div className="bg-white rounded-[18px] p-4 text-center font-body text-sm text-sd-ink-mute">
-            No wishes yet. Pick something from the catalog!
+            No wishes in this period
           </div>
         )}
-        {childWishRequests.map((req) => {
+        {filteredRequests.map((req) => {
           const wish = familyWishes.find((w) => w.id === req.wishId);
           if (!wish) return null;
           return (
@@ -193,18 +275,24 @@ export function ChildWishes({ onBack, onOpenWish }: ChildWishesProps) {
             </FormField>
 
             <FormField label="How many eggs?" className="mb-4">
-              <div className="bg-white rounded-[14px] p-3 border-2 border-[rgba(20,40,30,0.08)] flex items-center gap-2.5">
-                <Egg size={28} />
-                <input
-                  type="range"
-                  min="2"
-                  max="50"
-                  value={customCost}
-                  onChange={(e) => setCustomCost(Number(e.target.value))}
-                  className="flex-1 coral"
-                />
-                <div className="font-display font-bold text-2xl text-sd-egg-dk min-w-[36px] text-right">
-                  {customCost}
+              <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center gap-1 bg-sd-egg-lt rounded-xl px-2 py-1.5">
+                  <Egg size={18} />
+                  <button
+                    onClick={() => setCustomCost(Math.max(1, customCost - 1))}
+                    className="border-none bg-white/60 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer font-display font-bold text-lg text-sd-egg-dk hover:bg-white transition-colors"
+                  >
+                    −
+                  </button>
+                  <span className="font-display font-bold text-xl text-sd-egg-dk min-w-[32px] text-center">
+                    {customCost}
+                  </span>
+                  <button
+                    onClick={() => setCustomCost(Math.min(50, customCost + 1))}
+                    className="border-none bg-white/60 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer font-display font-bold text-lg text-sd-egg-dk hover:bg-white transition-colors"
+                  >
+                    +
+                  </button>
                 </div>
               </div>
             </FormField>

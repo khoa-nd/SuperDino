@@ -12,8 +12,7 @@ interface ParentWishesProps {
 export function ParentWishes({ onAddWish }: ParentWishesProps) {
   const { user, users, wishes, wishRequests, approveWish, rejectWish, refreshFromDb, convertWishToNormal, deleteWish, loading } = useStore();
   const [tab, setTab] = useState<'pending' | 'catalog' | 'history'>('pending');
-  const [adjustingReqId, setAdjustingReqId] = useState<string | null>(null);
-  const [adjustAmount, setAdjustAmount] = useState(0);
+  const [wishAmounts, setWishAmounts] = useState<Record<string, number>>({});
   const familyId = user?.familyId || 'f1';
   const familyWishes = wishes.filter((wish) => wish.familyId === familyId);
   const linkedKids = users.filter((u) => u.role === 'child' && u.familyId === familyId);
@@ -83,65 +82,10 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
           {pendingReqs.map((req) => {
             const wish = familyWishes.find((w) => w.id === req.wishId);
             if (!wish) return null;
-            const isAdjusting = adjustingReqId === req.id;
+            const currentAmount = wishAmounts[req.id] ?? wish.cost;
 
-            const handleStartAdjust = () => {
-              setAdjustingReqId(req.id);
-              setAdjustAmount(wish.cost);
-            };
-
-            const handleConfirmApprove = () => {
-              approveWish(req.id, adjustAmount);
-              setAdjustingReqId(null);
-            };
-
-            const handleCancelAdjust = () => {
-              setAdjustingReqId(null);
-              setAdjustAmount(0);
-            };
-
-            if (isAdjusting) {
-              return (
-                <div
-                  key={req.id}
-                  className="bg-white rounded-[22px] p-3.5 border-2 border-[rgba(20,40,30,0.05)] shadow-[0_2px_0_rgba(20,40,30,0.05)]"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className="w-[44px] h-[44px] rounded-xl flex items-center justify-center text-[22px]"
-                      style={{ background: wish.color }}
-                    >
-                      {wish.emoji}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-display font-bold text-base text-sd-ink">{wish.name}</div>
-                      <div className="font-body text-xs text-sd-ink-soft mt-0.5">
-                        {childName(req.userId)} · {formatRelativeTime(req.timestamp)}
-                      </div>
-                    </div>
-                    <div className="bg-sd-egg-lt rounded-xl p-2.5 flex items-center gap-1.5">
-                      <Egg size={14} />
-                      <input
-                        type="number"
-                        min={1}
-                        max={50}
-                        value={adjustAmount}
-                        onChange={(e) => setAdjustAmount(Math.max(1, Number(e.target.value)))}
-                        className="w-[44px] border-none bg-transparent font-display font-bold text-xl text-sd-egg-dk text-center outline-none"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Stamp color="paper" size="sm" block loading={loading} onClick={handleCancelAdjust}>
-                      Cancel
-                    </Stamp>
-                    <Stamp color="coral" size="sm" block loading={loading} onClick={handleConfirmApprove}>
-                      ✓ Grant {adjustAmount !== wish.cost ? `(${adjustAmount > wish.cost ? '+' : ''}${adjustAmount - wish.cost})` : ''}
-                    </Stamp>
-                  </div>
-                </div>
-              );
-            }
+            const inc = () => setWishAmounts((prev) => ({ ...prev, [req.id]: Math.min(50, currentAmount + 1) }));
+            const dec = () => setWishAmounts((prev) => ({ ...prev, [req.id]: Math.max(1, currentAmount - 1) }));
 
             return (
               <div
@@ -163,12 +107,35 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
                   </div>
                   <EggBadge count={wish.cost} size={14} />
                 </div>
-                <div className="flex gap-2 mt-3">
+
+                {/* Egg adjuster */}
+                <div className="flex items-center justify-center gap-2 mt-3 mb-1">
+                  <div className="flex items-center gap-1 bg-sd-egg-lt rounded-xl px-2 py-1.5">
+                    <Egg size={16} />
+                    <button
+                      onClick={dec}
+                      className="border-none bg-white/60 rounded-full w-7 h-7 flex items-center justify-center cursor-pointer font-display font-bold text-base text-sd-egg-dk hover:bg-white transition-colors"
+                    >
+                      −
+                    </button>
+                    <span className="font-display font-bold text-lg text-sd-egg-dk min-w-[28px] text-center">
+                      {currentAmount}
+                    </span>
+                    <button
+                      onClick={inc}
+                      className="border-none bg-white/60 rounded-full w-7 h-7 flex items-center justify-center cursor-pointer font-display font-bold text-base text-sd-egg-dk hover:bg-white transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
                   <Stamp color="paper" size="sm" block loading={loading} onClick={() => rejectWish(req.id)} className="text-sd-coral-dk">
                     ✕ Reject
                   </Stamp>
-                  <Stamp color="coral" size="sm" block loading={loading} onClick={handleStartAdjust}>
-                    ✓ Grant
+                  <Stamp color="coral" size="sm" block loading={loading} onClick={() => approveWish(req.id, currentAmount)}>
+                    ✓ Grant{currentAmount !== wish.cost ? ` (${currentAmount > wish.cost ? '+' : ''}${currentAmount - wish.cost})` : ''}
                   </Stamp>
                 </div>
               </div>
