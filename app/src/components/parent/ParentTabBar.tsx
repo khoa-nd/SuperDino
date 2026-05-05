@@ -1,5 +1,8 @@
 'use client';
 
+import { Home, ClipboardCheck, Sparkles, History } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
 type ParentTab = 'home' | 'tasks' | 'wishes' | 'history';
 
 interface ParentTabBarProps {
@@ -7,11 +10,11 @@ interface ParentTabBarProps {
   onTab: (tab: ParentTab) => void;
 }
 
-const tabs: { key: ParentTab; label: string; icon: string }[] = [
-  { key: 'home', label: 'Home', icon: '📥' },
-  { key: 'tasks', label: 'Tasks', icon: '✅' },
-  { key: 'wishes', label: 'Wished', icon: '⭐' },
-  { key: 'history', label: 'History', icon: '📊' },
+const tabs: { key: ParentTab; label: string; icon: LucideIcon }[] = [
+  { key: 'home', label: 'Home', icon: Home },
+  { key: 'tasks', label: 'Tasks', icon: ClipboardCheck },
+  { key: 'wishes', label: 'Wished', icon: Sparkles },
+  { key: 'history', label: 'History', icon: History },
 ];
 
 export function ParentTabBar({ tab, onTab }: ParentTabBarProps) {
@@ -19,6 +22,7 @@ export function ParentTabBar({ tab, onTab }: ParentTabBarProps) {
     <div className="shrink-0 z-10 flex justify-around bg-white border-t-2 border-sd-coral-lt px-1.5 py-2 pb-1.5 safe-area-bottom">
       {tabs.map((item) => {
         const active = tab === item.key;
+        const Icon = item.icon;
         return (
           <button
             key={item.key}
@@ -34,11 +38,11 @@ export function ParentTabBar({ tab, onTab }: ParentTabBarProps) {
             <div
               className={`
                 w-11 h-[30px] rounded-[14px]
-                flex items-center justify-center text-lg
+                flex items-center justify-center
                 ${active ? 'bg-sd-coral-lt' : 'bg-transparent'}
               `}
             >
-              {item.icon}
+              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
             </div>
             {item.label}
           </button>
