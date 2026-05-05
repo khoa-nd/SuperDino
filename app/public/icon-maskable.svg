@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6BC77A"/>
+      <stop offset="100%" stop-color="#4CAF50"/>
+    </linearGradient>
+    
+    <!-- Egg gradient -->
+    <radialGradient id="egg" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FFE066"/>
+      <stop offset="50%" stop-color="#F5C842"/>
+      <stop offset="100%" stop-color="#D4A017"/>
+    </radialGradient>
+    
+    <!-- Shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#2E7D32" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Full-bleed background for adaptive icons -->
+  <rect width="512" height="512" fill="url(#bg)" rx="0"/>
+  
+  <!-- Subtle radial highlight on background -->
+  <circle cx="256" cy="200" r="220" fill="#81C784" opacity="0.25"/>
+  
+  <!-- Main egg shape centered in safe zone (kept within ~410px diameter circle) -->
+  <g filter="url(#shadow)">
+    <!-- Egg body -->
+    <ellipse cx="256" cy="270" rx="140" ry="165" fill="url(#egg)"/>
+    
+    <!-- Egg highlight/shine -->
+    <ellipse cx="210" cy="210" rx="35" ry="55" fill="rgba(255,255,255,0.45)" transform="rotate(-25 210 210)"/>
+    
+    <!-- Egg spots -->
+    <circle cx="310" cy="240" r="12" fill="#B8860B" opacity="0.35"/>
+    <circle cx="190" cy="320" r="9" fill="#B8860B" opacity="0.3"/>
+    <circle cx="280" cy="350" r="7" fill="#B8860B" opacity="0.3"/>
+    <circle cx="230" cy="260" r="6" fill="#B8860B" opacity="0.25"/>
+    
+    <!-- Cute dino face -->
+    <!-- Eyes -->
+    <circle cx="220" cy="245" r="10" fill="#2E4A2E"/>
+    <circle cx="292" cy="245" r="10" fill="#2E4A2E"/>
+    <!-- Eye shine -->
+    <circle cx="223" cy="242" r="3" fill="white" opacity="0.8"/>
+    <circle cx="295" cy="242" r="3" fill="white" opacity="0.8"/>
+    <!-- Smile -->
+    <path d="M 240 265 Q 256 280 272 265" fill="none" stroke="#2E4A2E" stroke-width="5" stroke-linecap="round"/>
+    <!-- Rosy cheeks -->
+    <circle cx="205" cy="260" r="14" fill="#FF8A80" opacity="0.4"/>
+    <circle cx="307" cy="260" r="14" fill="#FF8A80" opacity="0.4"/>
+  </g>
+  
+  <!-- Optional: tiny dino spikes peeking from top -->
+  <path d="M 220 125 Q 230 105 245 118 Q 256 95 270 115 Q 285 100 295 125" 
+        fill="#4CAF50" stroke="#388E3C" stroke-width="3" stroke-linejoin="round"/>
+</svg>
