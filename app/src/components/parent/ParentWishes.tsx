@@ -10,7 +10,7 @@ interface ParentWishesProps {
 }
 
 export function ParentWishes({ onAddWish }: ParentWishesProps) {
-  const { user, users, wishes, wishRequests, approveWish, rejectWish, refreshFromDb, convertWishToNormal, deleteWish, loading } = useStore();
+  const { user, users, wishes, wishRequests, approveWish, rejectWish, refreshFromDb, convertWishToNormal, deleteWish, loadingAction } = useStore();
   const [tab, setTab] = useState<'pending' | 'catalog' | 'history'>('pending');
   const [wishAmounts, setWishAmounts] = useState<Record<string, number>>({});
   const familyId = user?.familyId || 'f1';
@@ -131,10 +131,10 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
                 </div>
 
                 <div className="flex gap-2">
-                  <Stamp color="paper" size="sm" block loading={loading} onClick={() => rejectWish(req.id)} className="text-sd-coral-dk">
+                  <Stamp color="paper" size="sm" block loading={loadingAction === `reject-wish-${req.id}`} onClick={() => rejectWish(req.id)} className="text-sd-coral-dk">
                     ✕ Reject
                   </Stamp>
-                  <Stamp color="coral" size="sm" block loading={loading} onClick={() => approveWish(req.id, currentAmount)}>
+                  <Stamp color="coral" size="sm" block loading={loadingAction === `approve-wish-${req.id}`} onClick={() => approveWish(req.id, currentAmount)}>
                     ✓ Grant{currentAmount !== wish.cost ? ` (${currentAmount > wish.cost ? '+' : ''}${currentAmount - wish.cost})` : ''}
                   </Stamp>
                 </div>

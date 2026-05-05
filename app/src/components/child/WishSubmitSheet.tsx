@@ -10,7 +10,7 @@ interface WishSubmitSheetProps {
 }
 
 export function WishSubmitSheet({ wish, onClose }: WishSubmitSheetProps) {
-  const { eggs, submitWish, loading } = useStore();
+  const { eggs, submitWish, loadingAction } = useStore();
   const canAfford = eggs >= wish.cost;
 
   const handleSubmit = () => {
@@ -46,7 +46,7 @@ export function WishSubmitSheet({ wish, onClose }: WishSubmitSheetProps) {
           <Stamp color="paper" block onClick={onClose}>
             Maybe later
           </Stamp>
-          <Stamp color="coral" block disabled={!canAfford} loading={loading} onClick={handleSubmit}>
+          <Stamp color="coral" block disabled={!canAfford} loading={loadingAction === `submit-wish-${wish.id}`} onClick={handleSubmit}>
             {canAfford ? 'Make this wish ✨' : 'Not enough'}
           </Stamp>
         </div>

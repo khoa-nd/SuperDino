@@ -26,12 +26,15 @@ export default function SuperDinoApp() {
     viewRole,
     toast,
     celebrate,
-    loading,
+    loadingAction,
     setAuthStage,
     setPendingRole,
     login,
     logout,
+
+    switchRole,
     refreshFromDb,
+    showToast,
     clearToast,
     clearCelebrate,
   } = useStore();
@@ -162,7 +165,7 @@ export default function SuperDinoApp() {
 
   return (
     <div className="h-dvh flex flex-col bg-sd-cream overflow-hidden">
-      {loading && <LoadingBar />}
+      {loadingAction && <LoadingBar />}
       <div className="flex-1 overflow-y-auto hide-scrollbar">
         {screen}
       </div>

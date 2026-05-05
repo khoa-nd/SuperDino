@@ -12,7 +12,7 @@ interface ParentDashboardProps {
 }
 
 export function ParentDashboard({ onTab, onLogout }: ParentDashboardProps) {
-  const { user, users, families, tasks, taskLogs, wishRequests, wishes, transactions, approveTask, rejectTask, approveWish, rejectWish, refreshFromDb, loading } = useStore();
+  const { user, users, families, tasks, taskLogs, wishRequests, wishes, transactions, approveTask, rejectTask, approveWish, rejectWish, refreshFromDb, loadingAction } = useStore();
   const familyId = user?.familyId || 'f1';
   const family = families.find((f) => f.id === familyId);
   const linkedKids = users.filter((u) => u.role === 'child' && u.familyId === familyId);
@@ -165,7 +165,7 @@ export function ParentDashboard({ onTab, onLogout }: ParentDashboardProps) {
                 onReject={() => rejectTask(log.id)}
                 approveColor="green"
                 allowAdjust
-                loading={loading}
+                loading={loadingAction === `approve-task-${log.id}` || loadingAction === `reject-task-${log.id}`}
               />
           );
         })}
@@ -209,7 +209,7 @@ export function ParentDashboard({ onTab, onLogout }: ParentDashboardProps) {
                 onReject={() => rejectWish(req.id)}
                 approveColor="coral"
                 allowAdjust
-                loading={loading}
+                loading={loadingAction === `approve-wish-${req.id}` || loadingAction === `reject-wish-${req.id}`}
               />
           );
         })}

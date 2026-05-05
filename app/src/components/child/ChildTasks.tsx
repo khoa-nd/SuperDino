@@ -21,7 +21,7 @@ const filters: { key: 'all' | TaskCategory; label: string }[] = [
 const customEmojis = ['✨', '📝', '🎯', '💡', '🌟', '🎨', '💪', '🏆', '🎵', '🌱', '❤️', '📌'];
 
 export function ChildTasks({ onBack }: ChildTasksProps) {
-  const { user, users, activeChildId, tasks, taskLogs, logTask, logCustomTask, loading } = useStore();
+  const { user, users, activeChildId, tasks, taskLogs, logTask, logCustomTask, loadingAction } = useStore();
   const [filter, setFilter] = useState<'all' | TaskCategory>('all');
   const [showCustom, setShowCustom] = useState(false);
   const [customName, setCustomName] = useState('');
@@ -123,7 +123,7 @@ export function ChildTasks({ onBack }: ChildTasksProps) {
                 size="sm"
                 color={pending ? 'paper' : 'green'}
                 disabled={pending}
-                loading={loading}
+                loading={loadingAction === `log-task-${task.id}`}
                 onClick={() => !pending && logTask(task.id)}
               >
                 {pending ? '…' : 'Log'}
@@ -206,7 +206,7 @@ export function ChildTasks({ onBack }: ChildTasksProps) {
               <Stamp color="paper" block onClick={() => setShowCustom(false)}>
                 Cancel
               </Stamp>
-              <Stamp color="coral" block disabled={!customName.trim()} loading={loading} onClick={handleCustomSubmit}>
+              <Stamp color="coral" block disabled={!customName.trim()} loading={loadingAction === 'log-custom-task'} onClick={handleCustomSubmit}>
                 Submit for approval
               </Stamp>
             </div>

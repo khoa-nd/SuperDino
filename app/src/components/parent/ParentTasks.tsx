@@ -10,7 +10,7 @@ interface ParentTasksProps {
 }
 
 export function ParentTasks({ onAddTask }: ParentTasksProps) {
-  const { user, users, tasks, taskLogs, approveTask, rejectTask, assignTask, deleteTask, updateTask, refreshFromDb, loading } = useStore();
+  const { user, users, tasks, taskLogs, approveTask, rejectTask, assignTask, deleteTask, updateTask, refreshFromDb, loadingAction } = useStore();
   const [tab, setTab] = useState<'pending' | 'assigned' | 'manage'>('pending');
   const [assignChildId, setAssignChildId] = useState<string | null>(null);
   const [eggAmounts, setEggAmounts] = useState<Record<string, number>>({});
@@ -99,8 +99,8 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Stamp color="paper" size="sm" block loading={loading} onClick={() => rejectTask(log.id)} className="text-sd-coral-dk">✕ Reject</Stamp>
-                  <Stamp color="green" size="sm" block loading={loading} onClick={() => approveTask(log.id, currentAmount)}>
+                  <Stamp color="paper" size="sm" block loading={loadingAction === `reject-task-${log.id}`} onClick={() => rejectTask(log.id)} className="text-sd-coral-dk">✕ Reject</Stamp>
+                  <Stamp color="green" size="sm" block loading={loadingAction === `approve-task-${log.id}`} onClick={() => approveTask(log.id, currentAmount)}>
                     ✓ Approve{currentAmount !== task.reward ? ` (${currentAmount > task.reward ? '+' : ''}${currentAmount - task.reward})` : ''}
                   </Stamp>
                 </div>

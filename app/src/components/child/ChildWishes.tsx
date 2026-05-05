@@ -15,7 +15,7 @@ interface ChildWishesProps {
 const customEmojis = ['✨', '🎁', '🎮', '🧸', '🚲', '🍪', '🎨', '💡', '🌟', '🎯', '❤️', '📌'];
 
 export function ChildWishes({ onBack, onOpenWish }: ChildWishesProps) {
-  const { user, users, activeChildId, eggs, wishes, wishRequests, transactions, submitCustomWish, showToast, loading } = useStore();
+  const { user, users, activeChildId, eggs, wishes, wishRequests, transactions, submitCustomWish, showToast, loadingAction } = useStore();
   const [showCustom, setShowCustom] = useState(false);
   const [customName, setCustomName] = useState('');
   const [customEmoji, setCustomEmoji] = useState('✨');
@@ -305,7 +305,7 @@ export function ChildWishes({ onBack, onOpenWish }: ChildWishesProps) {
               <Stamp color="paper" block onClick={() => setShowCustom(false)}>
                 Cancel
               </Stamp>
-              <Stamp color="coral" block disabled={!customName.trim()} loading={loading} onClick={handleCustomSubmit}>
+              <Stamp color="coral" block disabled={!customName.trim()} loading={loadingAction === 'submit-custom-wish'} onClick={handleCustomSubmit}>
                 Send for approval
               </Stamp>
             </div>

@@ -136,7 +136,7 @@ interface AppState {
   toast: string | null;
   celebrate: { amount: number; taskName: string } | null;
   justEarned: boolean;
-  loading: boolean;
+  loadingAction: string | null;
 
   // Actions
   setAuthStage: (stage: 'pick' | 'login' | 'done') => void;
@@ -194,19 +194,19 @@ export const useStore = create<AppState>()(
       toast: null,
       celebrate: null,
       justEarned: false,
-      loading: false,
+      loadingAction: null,
 
       // Auth actions
       setAuthStage: (stage) => set({ authStage: stage }),
       setPendingRole: (role) => set({ pendingRole: role }),
 
       login: async (username, role, options) => {
-        set({ loading: true });
+        set({ loadingAction: 'login' });
         try {
           const snapshot = await superdinoApi.login({ username, role, password: options?.password, familyCode: options?.familyCode });
-          set({ ...snapshotToState(snapshot), loading: false });
+          set({ ...snapshotToState(snapshot), loadingAction: null });
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -233,11 +233,11 @@ export const useStore = create<AppState>()(
         // Auto-refresh to get latest data when switching roles
         const userId = state.user?.id;
         if (userId) {
-          set({ loading: true });
-          superdinoApi.snapshot(userId).then((snapshot) => {
-            set({ ...snapshotToState(snapshot), loading: false, viewRole: newRole });
+        set({ loadingAction: 'switch-role' });
+        superdinoApi.snapshot(userId).then((snapshot) => {
+            set({ ...snapshotToState(snapshot), loadingAction: null, viewRole: newRole });
           }).catch(() => {
-            set({ loading: false });
+            set({ loadingAction: null });
           });
         }
       },
@@ -248,12 +248,12 @@ export const useStore = create<AppState>()(
         const userId = get().user?.id;
         if (!userId) return;
 
-        set({ loading: true });
+        set({ loadingAction: 'refresh' });
         try {
           const snapshot = await superdinoApi.snapshot(userId);
-          set({ ...snapshotToState(snapshot), loading: false });
+          set({ ...snapshotToState(snapshot), loadingAction: null });
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -265,12 +265,12 @@ export const useStore = create<AppState>()(
         const task = state.tasks.find((t) => t.id === taskId);
         if (!task || !child || task.familyId !== getFamilyId(child)) return;
 
-        set({ loading: true });
+        set({ loadingAction: `log-task-${taskId}` });
         try {
           const snapshot = await superdinoApi.logTask({ userId: child.id, taskId });
           set({
             ...snapshotToState(snapshot),
-            loading: false,
+            loadingAction: null,
             celebrate: snapshot.earned ? { amount: snapshot.earned.amount, taskName: snapshot.earned.taskName } : null,
             justEarned: Boolean(snapshot.earned),
             toast: snapshot.earned ? null : `Logged "${task.name}" — waiting for parent ⏳`,
@@ -279,7 +279,7 @@ export const useStore = create<AppState>()(
           setTimeout(() => set({ justEarned: false }), 1500);
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -289,7 +289,7 @@ export const useStore = create<AppState>()(
         const child = getChildUser(state);
         if (!child) return;
 
-        set({ loading: true });
+        set({ loadingAction: 'log-custom-task' });
         try {
           const snapshot = await superdinoApi.logCustomTask({
             userId: child.id,
@@ -299,12 +299,12 @@ export const useStore = create<AppState>()(
           });
           set({
             ...snapshotToState(snapshot),
-            loading: false,
+            loadingAction: null,
             toast: `Custom task "${taskName}" sent for approval ⏳`,
           });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -314,17 +314,17 @@ export const useStore = create<AppState>()(
         const child = getChildUser(state);
         if (!child) return;
 
-        set({ loading: true });
+        set({ loadingAction: `complete-assigned-${logId}` });
         try {
           const snapshot = await superdinoApi.completeAssignedTask({ userId: child.id, logId });
           set({
             ...snapshotToState(snapshot),
-            loading: false,
+            loadingAction: null,
             toast: 'Marked as done — waiting for parent approval ⏳',
           });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -335,13 +335,13 @@ export const useStore = create<AppState>()(
         const wish = state.wishes.find((w) => w.id === wishId);
         if (!wish || !child || wish.familyId !== getFamilyId(child) || state.eggs < wish.cost) return;
 
-        set({ loading: true });
+        set({ loadingAction: `submit-wish-${wishId}` });
         try {
           const snapshot = await superdinoApi.submitWish({ userId: child.id, wishId });
-          set({ ...snapshotToState(snapshot), loading: false, toast: 'Wish sent! A grown-up will check it ✨' });
+          set({ ...snapshotToState(snapshot), loadingAction: null, toast: 'Wish sent! A grown-up will check it ✨' });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -351,7 +351,7 @@ export const useStore = create<AppState>()(
         const child = getChildUser(state);
         if (!child) return;
 
-        set({ loading: true });
+        set({ loadingAction: 'submit-custom-wish' });
         try {
           const snapshot = await superdinoApi.submitCustomWish({
             userId: child.id,
@@ -359,10 +359,10 @@ export const useStore = create<AppState>()(
             emoji,
             suggestedReward: cost,
           });
-          set({ ...snapshotToState(snapshot), loading: false, toast: `New wish "${name}" sent for approval ✨` });
+          set({ ...snapshotToState(snapshot), loadingAction: null, toast: `New wish "${name}" sent for approval ✨` });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -371,13 +371,13 @@ export const useStore = create<AppState>()(
       approveTask: async (logId, amount) => {
         const state = get();
         if (!state.user) return;
-        set({ loading: true });
+        set({ loadingAction: `approve-task-${logId}` });
         try {
           const snapshot = await superdinoApi.approveTask({ userId: state.user.id, logId, amount });
-          set({ ...snapshotToState(snapshot), loading: false, justEarned: true });
+          set({ ...snapshotToState(snapshot), loadingAction: null, justEarned: true });
           setTimeout(() => set({ justEarned: false }), 1500);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -385,12 +385,12 @@ export const useStore = create<AppState>()(
       rejectTask: async (logId) => {
         const userId = get().user?.id;
         if (!userId) return;
-        set({ loading: true });
+        set({ loadingAction: `reject-task-${logId}` });
         try {
           const snapshot = await superdinoApi.rejectTask({ userId, logId });
-          set({ ...snapshotToState(snapshot), loading: false });
+          set({ ...snapshotToState(snapshot), loadingAction: null });
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -398,13 +398,13 @@ export const useStore = create<AppState>()(
       assignTask: async (taskId, childId) => {
         const state = get();
         if (!state.user) return;
-        set({ loading: true });
+        set({ loadingAction: `assign-task-${taskId}` });
         try {
           const snapshot = await superdinoApi.assignTask({ userId: state.user.id, taskId, assignToUserId: childId });
-          set({ ...snapshotToState(snapshot), loading: false, toast: 'Task assigned to kid 📋' });
+          set({ ...snapshotToState(snapshot), loadingAction: null, toast: 'Task assigned to kid 📋' });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -412,12 +412,12 @@ export const useStore = create<AppState>()(
       approveWish: async (requestId, amount) => {
         const state = get();
         if (!state.user) return;
-        set({ loading: true });
+        set({ loadingAction: `approve-wish-${requestId}` });
         try {
           const snapshot = await superdinoApi.approveWish({ userId: state.user.id, requestId, amount });
-          set({ ...snapshotToState(snapshot), loading: false });
+          set({ ...snapshotToState(snapshot), loadingAction: null });
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -425,12 +425,12 @@ export const useStore = create<AppState>()(
       rejectWish: async (requestId) => {
         const userId = get().user?.id;
         if (!userId) return;
-        set({ loading: true });
+        set({ loadingAction: `reject-wish-${requestId}` });
         try {
           const snapshot = await superdinoApi.rejectWish({ userId, requestId });
-          set({ ...snapshotToState(snapshot), loading: false });
+          set({ ...snapshotToState(snapshot), loadingAction: null });
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -438,17 +438,17 @@ export const useStore = create<AppState>()(
       createTask: async (data) => {
         const state = get();
         if (!state.user) return;
-        set({ loading: true });
+        set({ loadingAction: 'create-task' });
         try {
           const snapshot = await superdinoApi.createTask({ userId: state.user.id, data });
           set({
             ...snapshotToState(snapshot),
-            loading: false,
+            loadingAction: null,
             toast: `Task "${data.name}" added · ${data.autoApprove ? 'Auto-approved' : 'Approval required'}`,
           });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -456,13 +456,13 @@ export const useStore = create<AppState>()(
       createWish: async (data) => {
         const state = get();
         if (!state.user) return;
-        set({ loading: true });
+        set({ loadingAction: 'create-wish' });
         try {
           const snapshot = await superdinoApi.createWish({ userId: state.user.id, data });
-          set({ ...snapshotToState(snapshot), loading: false, toast: `Wish "${data.name}" added to catalog ⭐` });
+          set({ ...snapshotToState(snapshot), loadingAction: null, toast: `Wish "${data.name}" added to catalog ⭐` });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -470,13 +470,13 @@ export const useStore = create<AppState>()(
       convertWishToNormal: async (wishId) => {
         const state = get();
         if (!state.user) return;
-        set({ loading: true });
+        set({ loadingAction: `convert-wish-${wishId}` });
         try {
           const snapshot = await superdinoApi.convertWish({ userId: state.user.id, wishId });
-          set({ ...snapshotToState(snapshot), loading: false, toast: 'Wish converted to catalog ⭐' });
+          set({ ...snapshotToState(snapshot), loadingAction: null, toast: 'Wish converted to catalog ⭐' });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -484,13 +484,13 @@ export const useStore = create<AppState>()(
       deleteTask: async (taskId) => {
         const state = get();
         if (!state.user) return;
-        set({ loading: true });
+        set({ loadingAction: `delete-task-${taskId}` });
         try {
           const snapshot = await superdinoApi.deleteTask({ userId: state.user.id, taskId });
-          set({ ...snapshotToState(snapshot), loading: false, toast: 'Task deleted' });
+          set({ ...snapshotToState(snapshot), loadingAction: null, toast: 'Task deleted' });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -498,13 +498,13 @@ export const useStore = create<AppState>()(
       deleteWish: async (wishId) => {
         const state = get();
         if (!state.user) return;
-        set({ loading: true });
+        set({ loadingAction: `delete-wish-${wishId}` });
         try {
           const snapshot = await superdinoApi.deleteWish({ userId: state.user.id, wishId });
-          set({ ...snapshotToState(snapshot), loading: false, toast: 'Wish deleted' });
+          set({ ...snapshotToState(snapshot), loadingAction: null, toast: 'Wish deleted' });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },
@@ -512,13 +512,13 @@ export const useStore = create<AppState>()(
       updateTask: async (taskId, data) => {
         const state = get();
         if (!state.user) return;
-        set({ loading: true });
+        set({ loadingAction: `update-task-${taskId}` });
         try {
           const snapshot = await superdinoApi.updateTask({ userId: state.user.id, taskId, data });
-          set({ ...snapshotToState(snapshot), loading: false, toast: 'Task updated' });
+          set({ ...snapshotToState(snapshot), loadingAction: null, toast: 'Task updated' });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
-          set({ toast: getErrorMessage(error), loading: false });
+          set({ toast: getErrorMessage(error), loadingAction: null });
           setTimeout(() => set({ toast: null }), 15000);
         }
       },

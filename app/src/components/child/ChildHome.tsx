@@ -14,7 +14,7 @@ interface ChildHomeProps {
 }
 
 export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: ChildHomeProps) {
-  const { user, users, activeChildId, eggs, tasks, taskLogs, wishRequests, wishes, transactions, streak, justEarned, refreshFromDb, completeAssignedTask, loading } = useStore();
+  const { user, users, activeChildId, eggs, tasks, taskLogs, wishRequests, wishes, transactions, streak, justEarned, refreshFromDb, completeAssignedTask, loadingAction } = useStore();
   const dinoMood = justEarned ? 'cheer' : 'happy';
   const familyId = user?.familyId || 'f1';
   const currentChild = user?.role === 'child'
@@ -229,7 +229,7 @@ export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: Chil
                   <Stamp
                     size="sm"
                     color="coral"
-                    loading={loading}
+                    loading={loadingAction === `complete-assigned-${log.id}`}
                     onClick={() => completeAssignedTask(log.id)}
                   >
                     Done

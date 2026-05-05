@@ -13,7 +13,7 @@ interface LoginScreenProps {
 }
 
 export function LoginScreen({ role, onBack, onLogin }: LoginScreenProps) {
-  const { loading } = useStore();
+  const { loadingAction } = useStore();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -165,7 +165,7 @@ export function LoginScreen({ role, onBack, onLogin }: LoginScreenProps) {
         block
         size="lg"
         disabled={!canSubmit}
-        loading={loading}
+        loading={loadingAction === 'login'}
         onClick={() => onLogin(username.trim() || (isParent ? 'Parent' : 'Mia'), role, { password, familyCode: isParent ? (joinFamily ? familyCode : '') : (mode === 'register' ? familyCode : '') })}
       >
         {mode === 'login' ? 'Log in' : 'Create account'}
