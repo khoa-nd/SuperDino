@@ -13,3 +13,4 @@ export { BackHeader } from './BackHeader';
 export { Toggle } from './Toggle';
 export { FormField } from './FormField';
 export { LoadingBar } from './LoadingBar';
+export { ConfirmDialog } from './ConfirmDialog';

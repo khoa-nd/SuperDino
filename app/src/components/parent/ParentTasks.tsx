@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Egg, EggBadge, Pill, Stamp } from '@/components/ui';
+import { Card, Egg, EggBadge, Pill, Stamp, ConfirmDialog } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { formatRelativeTime } from '@/lib/utils';
 
@@ -10,7 +10,7 @@ interface ParentTasksProps {
 }
 
 export function ParentTasks({ onAddTask }: ParentTasksProps) {
-  const { user, users, tasks, taskLogs, approveTask, rejectTask, assignTask, deleteTask, updateTask, refreshFromDb, loadingAction } = useStore();
+  const { user, users, tasks, taskLogs, approveTask, rejectTask, assignTask, deleteTask, updateTask, refreshFromDb, loadingAction, cancelAssignedTask } = useStore();
   const [tab, setTab] = useState<'pending' | 'assigned' | 'manage'>('pending');
   const [assignChildId, setAssignChildId] = useState<string | null>(null);
   const [eggAmounts, setEggAmounts] = useState<Record<string, number>>({});
@@ -18,6 +18,7 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
   const [editName, setEditName] = useState('');
   const [editEmoji, setEditEmoji] = useState('');
   const [editReward, setEditReward] = useState(0);
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const familyId = user?.familyId || 'f1';
   const familyTasks = tasks.filter((task) => task.familyId === familyId);
   const linkedKids = users.filter((u) => u.role === 'child' && u.familyId === familyId);
@@ -126,6 +127,7 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
                       <div className="font-body text-xs text-sd-ink-soft mt-0.5">{childName(log.userId)} · <Pill variant="egg">⏳ Waiting</Pill></div>
                     </div>
                     <EggBadge count={`+${task.reward}`} size={14} />
+                    <Stamp size="sm" color="coral" loading={loadingAction === `cancel-assigned-${log.id}`} onClick={() => cancelAssignedTask(log.id)}>Cancel</Stamp>
                   </div>
                 );
               })}
@@ -232,13 +234,22 @@ export function ParentTasks({ onAddTask }: ParentTasksProps) {
                 <div className="flex items-center gap-1.5">
                   <div className="bg-sd-egg-lt rounded-xl py-1.5 px-2.5 flex items-center gap-1 font-display font-bold text-sm text-sd-egg-dk"><Egg size={14} /> {task.reward}</div>
                   <button onClick={handleStartEdit} className="border-none bg-transparent text-sd-ink-mute cursor-pointer w-7 h-7 rounded-full flex items-center justify-center hover:bg-sd-sky-lt hover:text-sd-sky-dk transition-colors text-sm" title="Edit task">✏️</button>
-                  <button onClick={() => deleteTask(task.id)} className="border-none bg-transparent text-sd-ink-mute cursor-pointer w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-100 hover:text-red-500 transition-colors text-lg" title="Delete task">×</button>
+                  <button onClick={() => setDeleteTaskId(task.id)} className="border-none bg-transparent text-sd-ink-mute cursor-pointer w-7 h-7 rounded-full flex items-center justify-center hover:bg-red-100 hover:text-red-500 transition-colors text-lg" title="Delete task">×</button>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteTaskId !== null}
+        title="Delete task?"
+        message="This will remove this task from the catalog."
+        confirmLabel="Delete"
+        onConfirm={() => { deleteTask(deleteTaskId!); setDeleteTaskId(null); }}
+        onCancel={() => setDeleteTaskId(null)}
+      />
     </div>
   );
 }

@@ -91,4 +91,7 @@ export const superdinoApi = {
 
   rejectWish: (input: { userId: string; requestId: string }) =>
     request<AppSnapshot>({ action: 'rejectWish', ...input }),
+
+  cancelAssignedTask: (input: { userId: string; logId: string }) =>
+    request<AppSnapshot>({ action: 'cancelAssignedTask', ...input }),
 };

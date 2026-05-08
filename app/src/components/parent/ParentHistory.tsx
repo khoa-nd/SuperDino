@@ -45,21 +45,23 @@ export function ParentHistory({}: ParentHistoryProps) {
 
   const allItems = useMemo(() => {
     const items = [
-      ...taskLogs.filter((log) => linkedKidIds.includes(log.userId)).map((log) => {
-        const task = familyTasks.find((t) => t.id === log.taskId);
-        return {
-          id: 'l' + log.id,
-          kind: 'task' as const,
-          name: task?.name || 'Task',
-          emoji: task?.emoji || '✓',
-          amount: task?.reward || 0,
-          status: log.status,
-          timestamp: log.timestamp,
-          color: task?.color || 'oklch(0.92 0.08 145)',
-        };
-      }),
+      ...taskLogs
+        .filter((log) => linkedKidIds.includes(log.userId) && (log.status === 'approved' || log.status === 'auto-approved'))
+        .map((log) => {
+          const task = familyTasks.find((t) => t.id === log.taskId);
+          return {
+            id: 'l' + log.id,
+            kind: 'task' as const,
+            name: task?.name || 'Task',
+            emoji: task?.emoji || '✓',
+            amount: task?.reward || 0,
+            status: log.status,
+            timestamp: log.timestamp,
+            color: task?.color || 'oklch(0.92 0.08 145)',
+          };
+        }),
       ...wishRequests
-        .filter((r) => r.status !== 'pending' && linkedKidIds.includes(r.userId))
+        .filter((r) => r.status === 'approved' && linkedKidIds.includes(r.userId))
         .map((req) => {
           const wish = familyWishes.find((w) => w.id === req.wishId);
           return {
@@ -85,7 +87,7 @@ export function ParentHistory({}: ParentHistoryProps) {
         return ts >= todayStart && ts < todayEnd;
       }
       if (filter === 'yesterday') {
-        return ts >= yesterdayStart && ts < todayEnd;
+        return ts >= yesterdayStart && ts < todayStart;
       }
       if (filter === 'custom') {
         if (dateFrom && ts < new Date(dateFrom)) return false;
@@ -123,17 +125,6 @@ export function ParentHistory({}: ParentHistoryProps) {
     });
     return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 5);
   }, [wishRequests, familyWishes, linkedKidIds]);
-
-  const topAssigned = useMemo(() => {
-    const counts: Record<string, { name: string; emoji: string; count: number }> = {};
-    taskLogs.filter((l) => linkedKidIds.includes(l.userId) && l.status === 'assigned').forEach((log) => {
-      const task = familyTasks.find((t) => t.id === log.taskId);
-      if (!task) return;
-      if (!counts[task.id]) counts[task.id] = { name: task.name, emoji: task.emoji, count: 0 };
-      counts[task.id].count += 1;
-    });
-    return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 5);
-  }, [taskLogs, familyTasks, linkedKidIds]);
 
   return (
     <div className="flex flex-col bg-sd-cream">
@@ -174,10 +165,9 @@ export function ParentHistory({}: ParentHistoryProps) {
 
       {/* Top stats */}
       <div className="mx-4 mb-1 bg-white rounded-[18px] p-3.5 border-2 border-[rgba(20,40,30,0.04)]">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <StatRow label="Top tasks" items={topTasks} />
           <StatRow label="Top wishes" items={topWishes} />
-          <StatRow label="Top assigned" items={topAssigned} />
         </div>
       </div>
 

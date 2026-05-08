@@ -158,6 +158,7 @@ interface AppState {
   approveTask: (logId: string, amount?: number) => void;
   rejectTask: (logId: string) => void;
   assignTask: (taskId: string, childId: string) => void;
+  cancelAssignedTask: (logId: string) => void;
   approveWish: (requestId: string, amount?: number) => void;
   rejectWish: (requestId: string) => void;
   createTask: (data: Omit<Task, 'id' | 'familyId' | 'createdAt'>) => void;
@@ -402,6 +403,20 @@ export const useStore = create<AppState>()(
         try {
           const snapshot = await superdinoApi.assignTask({ userId: state.user.id, taskId, assignToUserId: childId });
           set({ ...snapshotToState(snapshot), loadingAction: null, toast: 'Task assigned to kid 📋' });
+          setTimeout(() => set({ toast: null }), 15000);
+        } catch (error) {
+          set({ toast: getErrorMessage(error), loadingAction: null });
+          setTimeout(() => set({ toast: null }), 15000);
+        }
+      },
+
+      cancelAssignedTask: async (logId) => {
+        const state = get();
+        if (!state.user) return;
+        set({ loadingAction: `cancel-assigned-${logId}` });
+        try {
+          const snapshot = await superdinoApi.cancelAssignedTask({ userId: state.user.id, logId });
+          set({ ...snapshotToState(snapshot), loadingAction: null, toast: 'Assignment cancelled' });
           setTimeout(() => set({ toast: null }), 15000);
         } catch (error) {
           set({ toast: getErrorMessage(error), loadingAction: null });

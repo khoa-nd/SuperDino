@@ -34,7 +34,9 @@ export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: Chil
   const assignedCount = assignedLogs.length;
 
   // Combine task logs and wish requests for history
-  const taskItems: ActivityItem[] = childTaskLogs.map((log) => {
+  const taskItems: ActivityItem[] = childTaskLogs
+    .filter((log) => log.status !== 'assigned')
+    .map((log) => {
     const task = familyTasks.find((t) => t.id === log.taskId);
     return {
       id: 'l' + log.id,

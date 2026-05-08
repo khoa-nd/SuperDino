@@ -499,6 +499,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
     }
 
+    if (action === 'cancelAssignedTask') {
+      if (!payload.logId) throw new Error('logId is required');
+      const log = snapshot.taskLogs.find((item) => item.id === payload.logId);
+      if (!log || log.status !== 'assigned') throw new Error('Assigned task log not found');
+      await db.from('task_logs').delete().eq('id', payload.logId);
+      return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
+    }
+
     if (action === 'logTask') {
       if (!payload.taskId) throw new Error('taskId is required');
       const task = snapshot.tasks.find((item) => item.id === payload.taskId);

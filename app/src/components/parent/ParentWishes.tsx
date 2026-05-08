@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Egg, EggBadge, Pill, StatusPill, Stamp } from '@/components/ui';
+import { Card, Egg, EggBadge, Pill, StatusPill, Stamp, ConfirmDialog } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { formatRelativeTime } from '@/lib/utils';
 
@@ -13,6 +13,7 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
   const { user, users, wishes, wishRequests, approveWish, rejectWish, refreshFromDb, convertWishToNormal, deleteWish, loadingAction } = useStore();
   const [tab, setTab] = useState<'pending' | 'catalog' | 'history'>('pending');
   const [wishAmounts, setWishAmounts] = useState<Record<string, number>>({});
+  const [deleteWishId, setDeleteWishId] = useState<string | null>(null);
   const familyId = user?.familyId || 'f1';
   const familyWishes = wishes.filter((wish) => wish.familyId === familyId);
   const linkedKids = users.filter((u) => u.role === 'child' && u.familyId === familyId);
@@ -172,7 +173,7 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
                 <div className="font-display font-bold text-sm text-sd-ink">{wish.name}</div>
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                   {wish.category === 'other' ? (
-                    <Pill variant="coral">👤 Custom</Pill>
+                    <Pill variant="coral" className="text-[10px] normal-case">👤 Kid Idea</Pill>
                   ) : (
                     <span className="font-body text-[11px] text-sd-ink-mute">Catalog</span>
                   )}
@@ -187,15 +188,15 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
                     onClick={() => convertWishToNormal(wish.id)}
                     className="
                       border-none bg-sd-sky-lt text-sd-sky-dk
-                      font-display font-bold text-[10px]
+                      font-display font-bold text-[9px]
                       px-2 py-1.5 rounded-full cursor-pointer tracking-wider whitespace-nowrap
                     "
                   >
-                    Convert
+                    Save in Catalog
                   </button>
                 )}
                 <button
-                  onClick={() => deleteWish(wish.id)}
+                  onClick={() => setDeleteWishId(wish.id)}
                   className="
                     border-none bg-transparent text-sd-ink-mute cursor-pointer
                     w-8 h-8 rounded-full flex items-center justify-center
@@ -211,6 +212,15 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteWishId !== null}
+        title="Delete wish?"
+        message="This will remove this wish from the catalog."
+        confirmLabel="Delete"
+        onConfirm={() => { deleteWish(deleteWishId!); setDeleteWishId(null); }}
+        onCancel={() => setDeleteWishId(null)}
+      />
 
       {/* History */}
       {tab === 'history' && (
