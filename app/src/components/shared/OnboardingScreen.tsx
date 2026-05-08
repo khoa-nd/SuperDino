@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, Dino } from '@/components/ui';
+import Image from 'next/image';
+import { Card } from '@/components/ui';
 import type { UserRole } from '@/types';
 
 interface OnboardingScreenProps {
@@ -41,7 +42,13 @@ export function OnboardingScreen({ onPick }: OnboardingScreenProps) {
 
       {/* Dino */}
       <div className="flex justify-center my-2.5">
-        <Dino size={210} mood="cheer" wave />
+        <Image
+          src="/skull.png"
+          alt="SuperDino"
+          width={210}
+          height={210}
+          className="drop-shadow-lg"
+        />
       </div>
 
       {/* Role selection */}

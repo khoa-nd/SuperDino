@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Avatar, Dino, Egg, Stamp, Sparkle, Card, SectionTitle, StatusPill } from '@/components/ui';
+import Image from 'next/image';
+import { Avatar, Egg, Stamp, Sparkle, Card, SectionTitle, StatusPill } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { formatRelativeTime } from '@/lib/utils';
 import type { ActivityItem } from '@/types';
@@ -164,7 +165,13 @@ export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: Chil
               </div>
             </div>
             <div className="-mr-2.5 -mb-2">
-              <Dino size={130} mood={dinoMood} wave={!justEarned} />
+              <Image
+                src="/skull.png"
+                alt="SuperDino"
+                width={130}
+                height={130}
+                className="drop-shadow-lg"
+              />
             </div>
           </div>
 

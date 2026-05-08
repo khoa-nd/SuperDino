@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Dino, Stamp, FormField } from '@/components/ui';
+import Image from 'next/image';
+import { Stamp, FormField } from '@/components/ui';
 import { TextInput } from '@/components/ui/FormField';
 import { useStore } from '@/lib/store';
 import type { UserRole } from '@/types';
@@ -47,7 +48,13 @@ export function LoginScreen({ role, onBack, onLogin }: LoginScreenProps) {
 
       {/* Dino */}
       <div className="flex justify-center my-1 mb-2">
-        <Dino size={150} mood={isParent ? 'happy' : 'cheer'} wave={!isParent} />
+        <Image
+          src="/skull.png"
+          alt="SuperDino"
+          width={150}
+          height={150}
+          className="drop-shadow-lg"
+        />
       </div>
 
       {/* Title */}
