@@ -96,18 +96,40 @@ export function AddTaskSheet({ onClose }: AddTaskSheetProps) {
         </FormField>
 
         <FormField label="Reward" className="mb-3.5">
-          <div className="bg-white rounded-[14px] p-3 border-2 border-[rgba(20,40,30,0.08)] flex items-center gap-2.5">
-            <Egg size={28} />
-            <input
-              type="range"
-              min="1"
-              max="10"
-              value={reward}
-              onChange={(e) => setReward(Number(e.target.value))}
-              className="flex-1 accent-sd-green"
-            />
-            <div className="font-display font-bold text-2xl text-sd-egg-dk min-w-[30px] text-right">
-              {reward}
+          <div className="bg-white rounded-[14px] p-3 border-2 border-[rgba(20,40,30,0.08)]">
+            <div className="flex items-center gap-2.5 mb-2">
+              <Egg size={28} />
+              <input
+                type="range"
+                min="1"
+                max="120"
+                value={reward}
+                onChange={(e) => setReward(Number(e.target.value))}
+                className="flex-1 accent-sd-green"
+              />
+              <div className="flex items-center gap-0.5 bg-sd-egg-lt rounded-xl px-2 py-1">
+                <button
+                  onClick={() => setReward(Math.max(1, reward - 1))}
+                  className="border-none bg-white/60 rounded-full w-7 h-7 flex items-center justify-center cursor-pointer font-display font-bold text-base text-sd-egg-dk hover:bg-white transition-colors"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  value={reward}
+                  onChange={(e) => setReward(Math.max(1, Math.min(120, Number(e.target.value) || 1)))}
+                  className="w-12 text-center font-display font-bold text-lg text-sd-egg-dk bg-transparent border-none outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <button
+                  onClick={() => setReward(Math.min(120, reward + 1))}
+                  className="border-none bg-white/60 rounded-full w-7 h-7 flex items-center justify-center cursor-pointer font-display font-bold text-base text-sd-egg-dk hover:bg-white transition-colors"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            <div className="font-body text-[10px] text-sd-ink-mute text-center">
+              Drag the slider or tap −/+ to set reward (1–120)
             </div>
           </div>
         </FormField>
