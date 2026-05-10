@@ -5,50 +5,96 @@ Product Name: SuperDino
 Currency: Egg 🥚
 
 1. Product Overview
-SuperDino is a mobile-friendly web application designed to help children build positive habits through a fun, reward-based system. Children log meaningful actions, parents approve them, and rewards are given in the form of "Eggs". Eggs can be redeemed for wishes, encouraging delayed gratification and responsibility.
+SuperDino is a mobile-friendly web application designed to help children build positive habits through a fun, reward-based system. Children log meaningful actions, parents approve them, and rewards are given in the form of "Eggs". Eggs can be redeemed for wishes, encouraging delayed gratification and responsibility. The app uses a family-based model where parents and children share a family code to connect accounts.
 
 2. Goals & Objectives
 - Encourage consistent positive behavior
 - Teach effort → reward → delayed gratification
 - Reinforce family contribution and responsibility
+- Make habit-building fun with a dinosaur theme
 
 3. Core Concept
-Child performs real-world actions → logs them →
-Parent reviews → approves →
+Child performs real-world actions → logs them (or receives assigned tasks) →
+Parent reviews → approves/rejects →
 Child earns Eggs →
-Child redeems via “wish system” →
+Child redeems via wish system →
 Parent approves/rejects →
-System learns over time (AI layer in future)
+System tracks streaks and progress over time
 
 4. Key Features
 
-4.1 Task Logging (Child)
-- Log completed activities
-- Predefined tasks by parents
-- Optional custom tasks
-- Status: Pending Approval
+4.1 Onboarding & Authentication
+- Role selection screen: "I'm a Kid" / "I'm a Parent"
+- Username + password login/register (SHA-256 hashed, no third-party auth)
+- Family code system: parents create families, children join via code (e.g. "DINO-F1")
+- Demo accounts: username `parent` (parent) and `mia` (child), code `DINO-F1`
+- Session persisted via Zustand + localStorage
 
-4.2 Parent Approval System
-- Approve or reject tasks
-- Optional feedback
-- Quick approval interface
-- History tracking
+4.2 Task Logging (Child)
+- Browse predefined tasks organized by category (All / Morning / Home / School / Kind)
+- Tap to log a task, earning Eggs on parent approval
+- Custom tasks: describe your own, pick an emoji, suggest reward value
+- Assigned tasks: parent-assigned tasks appear on the home screen with a "Done" button
+- Activity feed filterable by Today / Yesterday / custom date range
 
-4.3 Reward System (Eggs 🥚)
-- Earn Eggs for approved tasks
-- Track Egg balance (Egg Nest)
-- Maintain transaction history (Egg History)
+4.3 Parent Approval System
+- Approve or reject logged tasks (from Dashboard or Tasks tab)
+- Adjustable reward per task (bonus or deduct)
+- Auto-approve toggle on tasks (skips parent review, auto-awards Eggs)
+- Cancel assigned tasks before child completes them
+- Reject with a single tap
 
-4.4 Redemption (Wish System)
-- Submit wishes using Eggs
-- Select from past wishes
-- Parent approval required
-- Status: pending / approved / rejected
+4.4 Task & Wish Catalog Management (Parent)
+- Create tasks with: emoji picker, name, category, reward slider (1–10), auto-approve toggle, auto-generated OKLCH color
+- Edit existing tasks (name, emoji, reward, category, auto-approve)
+- Delete tasks (with confirmation dialog)
+- Create wishes with: emoji picker, name, cost slider (2–40)
+- Delete wishes (with confirmation dialog)
+- Convert child-suggested custom wishes into permanent catalog items
 
-4.5 History System
+4.5 Reward System (Eggs 🥚)
+- Earn Eggs for approved tasks (immediately on auto-approve, or on parent approval)
+- Spend Eggs on approved wishes
+- Egg balance displayed on icon badge and dashboard
+- Transaction history (earn/spend with labels)
+- Celebration overlay with confetti animation on earning Eggs
+
+4.6 Wish Redemption (Child)
+- Browse wish catalog with egg costs
+- Submit wish requests with cost confirmation
+- Suggest new custom wishes (name, emoji, cost)
+- View wish request history (filtered by Today / Yesterday / custom date range)
+- Server-side balance check prevents overspending
+
+4.7 Dino Badges & Achievement System (Child & Parent)
+- Replace streak with Dino Badges to encourage task logging and positive behavior
+- Parent-granted badge system: up to 4 badges per month (1 per week) per child
+- Dino image badges using available dinosaur PNG assets (T-Rex, Triceratops, Diplodocus, Dinosaur, Skull)
+- Badge Board screen (Child): month-year sections, 4 weekly slots per month, recent first
+  - Unlocked slots display the granted dino image + label
+  - Locked slots show egg_unlock.png placeholder
+  - Scrollable history of all months
+- Child Home: simple "Badges" count label with animated "NEW" hint; recent badges shown as notification rows (like assigned tasks)
+- Parent Badges tab: child selector, current month badge grid, grant badge sheet with image gallery
+
+4.8 Parent Dashboard
+- Pending approvals count summary
+- Family code display for sharing
+- Kid list with per-child views
+- Quick approve/reject task cards
+- Quick approve/reject wish cards with cost adjuster
+
+4.9 Parent History
+- Full activity feed with date range filter
+- SVG bar chart (ProgressChart): daily (7 days) or weekly (8 weeks), tasks or eggs metric, per-kid colored bars
+- Top stats: most frequent tasks and wishes ranked
+- Stats tiles for quick overview
+
+4.10 History System
 - Task history
-- Reward history
-- Wish history
+- Reward transaction history
+- Wish request history
+- Activity feed combining both tasks and wishes in chronological order
 
 5. AI Features (Future Phase)
 - Suggest reward values for tasks
@@ -58,95 +104,136 @@ System learns over time (AI layer in future)
 6. User Roles
 
 Child:
-- Log tasks
-- View Eggs
-- Submit wishes
+- Log predefined and custom tasks
+- Complete assigned tasks
+- View Egg balance and transaction history
+- Browse wish catalog and submit wishes
+- Suggest custom wishes
+- View streak and journey
 
 Parents:
-- Create tasks
-- Approve/reject tasks
-- Assign rewards
-- Review history
+- Create and manage task catalog
+- Create and manage wish catalog
+- Approve/reject task logs (with reward adjustment)
+- Approve/reject wish requests (with cost adjustment)
+- Assign tasks to specific children
+- Convert custom wishes to catalog items
+- Review full history with charts and stats
+- Manage family and invite members via family code
 
 7. User Flow
-1. Child completes task
-2. Logs task
-3. Parent approves
-4. Eggs awarded
-5. Child accumulates Eggs
-6. Child submits wish
-7. Parent approves/rejects
+1. User selects role (Kid / Parent) on onboarding
+2. User registers or logs in with username + password
+3. Parent creates family; child joins with family code
+4. Child views available tasks, logs completed task (or receives assigned task)
+5. Task appears as Pending Approval (or Auto-Approved if enabled)
+6. Parent approves/rejects; Eggs awarded automatically on approval
+7. Child accumulates Eggs, views balance
+8. Child browses wish catalog, submits wish request
+9. Parent approves/rejects wish; Eggs deducted on approval
+10. Both roles can view history, stats, and progress
 
 8. UX Principles
-- Minimal text, icon-driven
-- Fast interactions
-- Positive reinforcement only
-- Fun and engaging (SuperDino theme)
+- Minimal text, emoji-driven interfaces
+- Fast interactions with bottom sheets and single-tap actions
+- Positive reinforcement only (celebration overlay, streak, dino character moods)
+- Fun and engaging (SuperDino dinosaur theme with SVG character in 4 moods)
+- Mobile-first responsive design with PWA support
+- Toast notifications and loading indicators for all actions
+- Confirmation dialogs before destructive actions
 
 9. Technical Requirements
 
 Frontend:
-- Responsive web app
-- Mobile-first design
+- Next.js 16 (App Router, Turbopack)
+- React 19
+- TypeScript 5
+- Tailwind CSS v4 (PostCSS)
+- Zustand 5 (persisted state)
+- Lucide React icons
+- Custom SVG components (Dino, Egg, Sparkle, Stamp)
+- Google Fonts: Fredoka (display) + Nunito (body)
+- PWA manifest + apple touch icons + maskable icons
 
 Backend:
-- REST API
-- Authentication (parent/child roles)
+- Single API endpoint: POST /api/superdino (action-based)
+- Supabase (PostgreSQL) with service role key access
+- Custom auth: SHA-256 password hashing with per-username salt
+- Server-side balance validation for wish spending
+- Offline-capable seed data fallback
 
-Database:
-- Users
-- Tasks
-- TaskLogs
-- Rewards
-- Wishes
+Database (Supabase PostgreSQL):
+- families — family name, join code
+- profiles — username, display name, role, family_id, password_hash
+- tasks — name, emoji, reward, category, auto_approve, color, family_id
+- wishes — name, emoji, cost, category, color, family_id
+- task_logs — task_id, user_id, status (assigned/pending/approved/auto-approved/rejected), assigned_by
+- wish_requests — wish_id, user_id, status (pending/approved/rejected)
+- transactions — user_id, amount, type (earn/spend), label
 
-10. Data Model (Simplified)
+Deployment:
+- Vercel (hosting)
+- Environment variables: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 
-User:
-- id
-- role
+10. Data Model
+
+Family:
+- id, name, code, created_at
+
+User / Profile:
+- id, username, name, role (child | parent), family_id, password_hash, created_at
 
 Task:
-- id
-- name
-- reward_value
+- id, name, emoji, reward, category (morning | home | school | kind | other), auto_approve, color (OKLCH), family_id, created_at
 
 TaskLog:
-- id
-- user_id
-- task_id
-- status
-
-RewardTransaction:
-- id
-- amount
-- type
+- id, task_id, user_id, status (assigned | pending | approved | auto-approved | rejected), assigned_by, timestamp
 
 Wish:
-- id
-- description
-- cost
-- status
+- id, name, emoji, cost, category (normal | other), color (OKLCH), family_id, created_at
 
-11. MVP Scope
-- Task logging
-- Parent approval
-- Manual reward assignment
+WishRequest:
+- id, wish_id, user_id, status (pending | approved | rejected), timestamp
+
+Transaction:
+- id, user_id, amount, type (earn | spend), label, timestamp
+
+11. MVP Scope (Completed)
+- Role-based onboarding (kid/parent)
+- Username/password registration and login
+- Family code creation and joining
+- Task catalog management (CRUD)
+- Task logging (predefined + custom)
+- Assigned tasks (parent → child)
+- Parent approval/rejection with reward adjustment
+- Auto-approve for trusted tasks
 - Egg balance tracking
-- Wish redemption
-- Basic history
+- Wish catalog management (CRUD)
+- Wish submission and redemption
+- Custom wish suggestions with parent conversion
+- Streak tracking and journey view
+- Celebration overlay
+- Activity feed and history
+- Parent dashboard with summary
+- Parent history with charts and stats
+- PWA support
 
 12. Future Enhancements
 - Dino character evolution
 - Egg hatching system
-- Gamification (levels, badges)
-- Notifications
+- Gamification (levels, badges, Dino Badges)
+- Notifications (push or in-app)
 - Voice input
+- Landing page for web user-agent
+- Calendar view for kids
+- AI layer for suggestions
+- Email / Google login (revalidate login flow)
 
 13. Risks
-- Over-rewarding
-- System complexity
-- Parent inconsistency
+- Over-rewarding or inflation (mitigated by parent approval control)
+- System complexity from feature creep
+- Parent inconsistency in approval
+- Offline reliance on localStorage (data loss possible)
 
 14. Guiding Philosophy
-“You become stronger by what you do.”
+"You become stronger by what you do."

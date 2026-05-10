@@ -130,6 +130,18 @@ body {
   100% { transform: translateX(400%); }
 }
 
+@keyframes sd-scale-in {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes sd-bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.08); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 @keyframes marquee {
   0% { transform: translateX(120vw); }
   100% { transform: translateX(-120px); }
@@ -163,6 +175,14 @@ body {
 
 .animate-loading-bar {
   animation: sd-loading-bar 1.2s ease-in-out infinite;
+}
+
+.animate-scale-in {
+  animation: sd-scale-in 350ms cubic-bezier(.2,1.2,.4,1);
+}
+
+.animate-bounce-in {
+  animation: sd-bounce-in 500ms cubic-bezier(.2,1.4,.4,1);
 }
 
 /* Tap highlight removal */

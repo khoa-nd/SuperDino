@@ -1,4 +1,4 @@
-import type { Family, Task, Transaction, User, UserRole, Wish, WishRequest, TaskLog } from '@/types';
+import type { Family, GrantedBadge, Task, Transaction, User, UserRole, Wish, WishRequest, TaskLog } from '@/types';
 
 export interface AppSnapshot {
   user: User;
@@ -9,6 +9,7 @@ export interface AppSnapshot {
   wishes: Wish[];
   wishRequests: WishRequest[];
   transactions: Transaction[];
+  badges: GrantedBadge[];
   eggs: number;
   streak: number;
 }
@@ -94,4 +95,13 @@ export const superdinoApi = {
 
   cancelAssignedTask: (input: { userId: string; logId: string }) =>
     request<AppSnapshot>({ action: 'cancelAssignedTask', ...input }),
+
+  grantBadge: (input: { userId: string; childId: string; image: string; label: string; month: string; week: number; message?: string }) =>
+    request<AppSnapshot>({ action: 'grantBadge', ...input }),
+
+  revokeBadge: (input: { userId: string; badgeId: string }) =>
+    request<AppSnapshot>({ action: 'revokeBadge', ...input }),
+
+  markBadgesSeen: (input: { userId: string; childId: string }) =>
+    request<AppSnapshot>({ action: 'markBadgesSeen', ...input }),
 };

@@ -1,6 +1,6 @@
 export { ChildHome } from './ChildHome';
 export { ChildTasks } from './ChildTasks';
 export { ChildWishes } from './ChildWishes';
-export { StreakJourney } from './StreakJourney';
+export { BadgeBoard } from './BadgeBoard';
 export { CelebrationOverlay } from './CelebrationOverlay';
 export { WishSubmitSheet } from './WishSubmitSheet';

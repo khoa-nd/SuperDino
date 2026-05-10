@@ -1,9 +1,9 @@
 'use client';
 
-import { Home, ClipboardCheck, Sparkles, History } from 'lucide-react';
+import { Home, ClipboardCheck, Sparkles, History, Medal } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-type ParentTab = 'home' | 'tasks' | 'wishes' | 'history';
+type ParentTab = 'home' | 'tasks' | 'wishes' | 'history' | 'badges';
 
 interface ParentTabBarProps {
   tab: ParentTab;
@@ -14,6 +14,7 @@ const tabs: { key: ParentTab; label: string; icon: LucideIcon }[] = [
   { key: 'home', label: 'Home', icon: Home },
   { key: 'tasks', label: 'Tasks', icon: ClipboardCheck },
   { key: 'wishes', label: 'Wished', icon: Sparkles },
+  { key: 'badges', label: 'Badges', icon: Medal },
   { key: 'history', label: 'History', icon: History },
 ];
 

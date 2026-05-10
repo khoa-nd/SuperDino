@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Family, User, Task, TaskLog, Wish, WishRequest, Transaction, UserRole } from '@/types';
+import type { Family, GrantedBadge, User, Task, TaskLog, Wish, WishRequest, Transaction, UserRole } from '@/types';
 import { type AppSnapshot, superdinoApi } from '@/lib/superdino-api';
 
 const DEFAULT_FAMILY_ID = 'f1';
@@ -71,6 +71,7 @@ type PersistedAppState = Pick<
   | 'wishes'
   | 'wishRequests'
   | 'transactions'
+  | 'badges'
   | 'streak'
 >;
 
@@ -88,6 +89,7 @@ const normalizePersistedState = (state: Partial<AppState>, shouldResetProgress: 
   wishes: state.wishes?.length ? state.wishes : INITIAL_WISH_CATALOG,
   wishRequests: shouldResetProgress ? [] : state.wishRequests ?? [],
   transactions: shouldResetProgress ? [] : state.transactions ?? [],
+  badges: shouldResetProgress ? [] : state.badges ?? [],
   streak: shouldResetProgress ? 0 : state.streak ?? 0,
 });
 
@@ -108,6 +110,7 @@ const snapshotToState = (snapshot: AppSnapshot) => ({
   wishes: snapshot.wishes,
   wishRequests: snapshot.wishRequests,
   transactions: snapshot.transactions,
+  badges: snapshot.badges,
   streak: snapshot.streak,
 });
 
@@ -130,6 +133,7 @@ interface AppState {
   wishes: Wish[];
   wishRequests: WishRequest[];
   transactions: Transaction[];
+  badges: GrantedBadge[];
   streak: number;
 
   // UI state
@@ -167,6 +171,8 @@ interface AppState {
   deleteTask: (taskId: string) => void;
   deleteWish: (wishId: string) => void;
   updateTask: (taskId: string, data: Partial<Omit<Task, 'id' | 'familyId' | 'createdAt'>>) => void;
+  grantBadge: (childId: string, image: string, label: string, month: string, week: number, message?: string) => void;
+  markBadgesSeen: (childId: string) => void;
 
   // UI
   showToast: (message: string) => void;
@@ -191,6 +197,7 @@ export const useStore = create<AppState>()(
       wishes: INITIAL_WISH_CATALOG,
       wishRequests: INITIAL_WISH_REQUESTS,
       transactions: INITIAL_TX,
+      badges: [],
       streak: 0,
       toast: null,
       celebrate: null,
@@ -524,6 +531,40 @@ export const useStore = create<AppState>()(
         }
       },
 
+      grantBadge: async (childId, image, label, month, week, message) => {
+        const state = get();
+        if (!state.user) return;
+        set({ loadingAction: 'grant-badge' });
+        try {
+          const snapshot = await superdinoApi.grantBadge({
+            userId: state.user.id,
+            childId,
+            image,
+            label,
+            month,
+            week,
+            message,
+          });
+          set({ ...snapshotToState(snapshot), loadingAction: null, toast: `Badge "${label}" granted! 🏅` });
+          setTimeout(() => set({ toast: null }), 15000);
+        } catch (error) {
+          set({ toast: getErrorMessage(error), loadingAction: null });
+          setTimeout(() => set({ toast: null }), 15000);
+        }
+      },
+
+      markBadgesSeen: async (childId) => {
+        const state = get();
+        if (!state.user) return;
+        set({ loadingAction: 'mark-badges-seen' });
+        try {
+          const snapshot = await superdinoApi.markBadgesSeen({ userId: state.user.id, childId });
+          set({ ...snapshotToState(snapshot), loadingAction: null });
+        } catch {
+          set({ loadingAction: null });
+        }
+      },
+
       updateTask: async (taskId, data) => {
         const state = get();
         if (!state.user) return;
@@ -562,6 +603,7 @@ export const useStore = create<AppState>()(
         wishes: state.wishes,
         wishRequests: state.wishRequests,
         transactions: state.transactions,
+        badges: state.badges,
         streak: state.streak,
       }),
       version: 3,

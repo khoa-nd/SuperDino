@@ -9,14 +9,14 @@ import { OnboardingScreen } from '@/components/shared/OnboardingScreen';
 import { LoginScreen } from '@/components/shared/LoginScreen';
 
 // Child screens
-import { ChildHome, ChildTasks, ChildWishes, StreakJourney, CelebrationOverlay, WishSubmitSheet } from '@/components/child';
+import { ChildHome, ChildTasks, ChildWishes, BadgeBoard, CelebrationOverlay, WishSubmitSheet } from '@/components/child';
 
 // Parent screens
-import { ParentTabBar, ParentDashboard, ParentTasks, ParentWishes, ParentHistory, AddTaskSheet, AddWishSheet, type ParentTab } from '@/components/parent';
+import { ParentTabBar, ParentDashboard, ParentTasks, ParentWishes, ParentHistory, ParentBadges, AddTaskSheet, AddWishSheet, type ParentTab } from '@/components/parent';
 
 import type { Wish, UserRole } from '@/types';
 
-type ChildView = 'home' | 'tasks' | 'wishes' | 'journey';
+type ChildView = 'home' | 'tasks' | 'wishes' | 'badges';
 
 export default function SuperDinoApp() {
   // Store state
@@ -113,7 +113,7 @@ export default function SuperDinoApp() {
             onLogTask={() => setChildView('tasks')}
             onWishes={() => setChildView('wishes')}
             onLogout={handleLogout}
-            onStreakClick={() => setChildView('journey')}
+            onBadgesClick={() => setChildView('badges')}
           />
         );
         break;
@@ -128,8 +128,8 @@ export default function SuperDinoApp() {
           />
         );
         break;
-      case 'journey':
-        screen = <StreakJourney onBack={() => setChildView('home')} />;
+      case 'badges':
+        screen = <BadgeBoard onBack={() => setChildView('home')} />;
         break;
     }
   } else if (viewRole === 'parent') {
@@ -158,6 +158,9 @@ export default function SuperDinoApp() {
         break;
       case 'history':
         screen = <ParentHistory />;
+        break;
+      case 'badges':
+        screen = <ParentBadges standalone />;
         break;
     }
     tabBar = <ParentTabBar tab={parentTab} onTab={setParentTab} />;

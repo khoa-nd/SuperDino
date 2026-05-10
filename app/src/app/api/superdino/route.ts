@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseAdmin } from '@/lib/supabase-server';
 import { createHash } from 'crypto';
-import type { Family, Task, TaskCategory, TaskLog, TaskLogStatus, Transaction, User, UserRole, Wish, WishCategory, WishRequest, WishRequestStatus } from '@/types';
+import type { Family, GrantedBadge, Task, TaskCategory, TaskLog, TaskLogStatus, Transaction, User, UserRole, Wish, WishCategory, WishRequest, WishRequestStatus } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +32,7 @@ type DbWish = { id: string; name: string; emoji: string; cost: number; category?
 type DbTaskLog = { id: string; task_id: string; user_id: string; status: TaskLogStatus; assigned_by?: string; timestamp: string };
 type DbWishRequest = { id: string; wish_id: string; user_id: string; status: WishRequestStatus; timestamp: string };
 type DbTransaction = { id: string; user_id: string; type: 'earn' | 'spend'; amount: number; label: string; timestamp: string };
+type DbBadge = { id: string; child_id: string; granted_by_id: string; granted_by_name: string; image: string; label: string; month: string; week: number; message: string; seen: boolean; revoked: boolean; granted_at: string };
 
 type RequestPayload = {
   action?: string;
@@ -50,6 +51,13 @@ type RequestPayload = {
   suggestedReward?: number;
   amount?: number;
   data?: Partial<Task & Wish>;
+  childId?: string;
+  image?: string;
+  label?: string;
+  month?: string;
+  week?: number;
+  badgeId?: string;
+  message?: string;
 };
 
 const id = () => `${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36)}`;
@@ -133,6 +141,20 @@ const mapWishRequest = (request: DbWishRequest): WishRequest => ({
   userId: request.user_id,
   status: request.status,
   timestamp: request.timestamp,
+});
+
+const mapBadge = (badge: DbBadge): GrantedBadge => ({
+  id: badge.id,
+  childId: badge.child_id,
+  grantedById: badge.granted_by_id,
+  grantedByName: badge.granted_by_name,
+  image: badge.image,
+  label: badge.label,
+  month: badge.month,
+  week: badge.week,
+  message: badge.message,
+  seen: badge.seen,
+  grantedAt: badge.granted_at,
 });
 
 const mapTransaction = (transaction: DbTransaction): Transaction => ({
@@ -225,6 +247,7 @@ async function buildSnapshot(db: ReturnType<typeof createSupabaseAdmin>, userId:
     logsRes,
     requestsRes,
     transactionsRes,
+    badgesRes,
   ] = await Promise.all([
     db.from('families').select('*').eq('id', familyId),
     db.from('profiles').select('*').eq('family_id', familyId),
@@ -233,9 +256,10 @@ async function buildSnapshot(db: ReturnType<typeof createSupabaseAdmin>, userId:
     db.from('task_logs').select('*').order('timestamp', { ascending: false }),
     db.from('wish_requests').select('*').order('timestamp', { ascending: false }),
     db.from('transactions').select('*').order('timestamp', { ascending: false }),
+    db.from('badges').select('*').eq('revoked', false).order('granted_at', { ascending: false }),
   ]);
 
-  for (const result of [familiesRes, usersRes, tasksRes, wishesRes, logsRes, requestsRes, transactionsRes]) {
+  for (const result of [familiesRes, usersRes, tasksRes, wishesRes, logsRes, requestsRes, transactionsRes, badgesRes]) {
     if (result.error) throw new Error(result.error.message);
   }
 
@@ -244,6 +268,7 @@ async function buildSnapshot(db: ReturnType<typeof createSupabaseAdmin>, userId:
   const transactions = ((transactionsRes.data || []) as DbTransaction[]).filter((transaction) => familyUserIds.includes(transaction.user_id));
   const taskLogs = ((logsRes.data || []) as DbTaskLog[]).filter((log) => familyUserIds.includes(log.user_id));
   const wishRequests = ((requestsRes.data || []) as DbWishRequest[]).filter((request) => familyUserIds.includes(request.user_id));
+  const badges = ((badgesRes.data || []) as DbBadge[]).filter((badge) => familyUserIds.includes(badge.child_id));
 
   return {
     user: mapUser(userRow),
@@ -254,6 +279,7 @@ async function buildSnapshot(db: ReturnType<typeof createSupabaseAdmin>, userId:
     wishes: ((wishesRes.data || []) as DbWish[]).map(mapWish),
     wishRequests: wishRequests.map(mapWishRequest),
     transactions: transactions.map(mapTransaction),
+    badges: badges.map(mapBadge),
     eggs: transactions.reduce((sum, transaction) => sum + (transaction.type === 'earn' ? transaction.amount : -transaction.amount), 0),
     streak: 0,
   };
@@ -546,6 +572,42 @@ export async function POST(request: Request) {
           await db.from('transactions').insert({ id: id(), user_id: log.userId, type: 'earn', amount: reward, label: task.name });
         }
       }
+      return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
+    }
+
+    if (action === 'grantBadge') {
+      if (!payload.childId || !payload.image || !payload.label || !payload.month || payload.week == null) {
+        throw new Error('childId, image, label, month, and week are required');
+      }
+      const childUser = snapshot.users.find((u) => u.id === payload.childId && u.role === 'child');
+      if (!childUser || childUser.familyId !== familyId) throw new Error('Child not found in this family');
+      await db.from('badges').insert({
+        id: id(),
+        child_id: payload.childId,
+        granted_by_id: payload.userId,
+        granted_by_name: snapshot.user.name,
+        image: payload.image,
+        label: payload.label,
+        month: payload.month,
+        week: Math.max(1, Math.min(4, Number(payload.week))),
+        message: payload.message || '',
+        seen: false,
+        revoked: false,
+      });
+      return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
+    }
+
+    if (action === 'markBadgesSeen') {
+      if (!payload.childId) throw new Error('childId is required');
+      await db.from('badges').update({ seen: true }).eq('child_id', payload.childId).eq('seen', false);
+      return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
+    }
+
+    if (action === 'revokeBadge') {
+      if (!payload.badgeId) throw new Error('badgeId is required');
+      const badge = snapshot.badges.find((b) => b.id === payload.badgeId);
+      if (!badge) throw new Error('Badge not found');
+      await db.from('badges').update({ revoked: true }).eq('id', payload.badgeId);
       return NextResponse.json({ data: await buildSnapshot(db, payload.userId) });
     }
 

@@ -88,8 +88,31 @@ export interface AppState {
   wishes: Wish[];
   wishRequests: WishRequest[];
   transactions: Transaction[];
+  badges: GrantedBadge[];
   streak: number;
 }
+
+export interface GrantedBadge {
+  id: string;
+  childId: string;
+  grantedById: string;
+  grantedByName: string;
+  image: string;
+  label: string;
+  month: string;
+  week: number;
+  message: string;
+  seen: boolean;
+  grantedAt: string;
+}
+
+export const BADGE_IMAGES = [
+  { file: 'tyrannosaurus-rex.png', name: 'T-Rex' },
+  { file: 'triceratops.png', name: 'Triceratops' },
+  { file: 'diplodocus.png', name: 'Diplodocus' },
+  { file: 'dinosaur.png', name: 'Dinosaur' },
+  { file: 'skull.png', name: 'Skull' },
+] as const;
 
 // Activity item for combined history view
 export interface ActivityItem {

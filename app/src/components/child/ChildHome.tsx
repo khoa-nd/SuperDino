@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { Avatar, Egg, Stamp, Sparkle, Card, SectionTitle, StatusPill } from '@/components/ui';
 import { useStore } from '@/lib/store';
@@ -11,11 +11,11 @@ interface ChildHomeProps {
   onLogTask: () => void;
   onWishes: () => void;
   onLogout: () => void;
-  onStreakClick: () => void;
+  onBadgesClick: () => void;
 }
 
-export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: ChildHomeProps) {
-  const { user, users, activeChildId, eggs, tasks, taskLogs, wishRequests, wishes, transactions, streak, justEarned, refreshFromDb, completeAssignedTask, loadingAction } = useStore();
+export function ChildHome({ onLogTask, onWishes, onLogout, onBadgesClick }: ChildHomeProps) {
+  const { user, users, activeChildId, eggs, tasks, taskLogs, wishRequests, wishes, transactions, badges, justEarned, refreshFromDb, completeAssignedTask, loadingAction } = useStore();
   const dinoMood = justEarned ? 'cheer' : 'happy';
   const familyId = user?.familyId || 'f1';
   const currentChild = user?.role === 'child'
@@ -101,6 +101,22 @@ export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: Chil
   const earned = childTransactions.filter((t) => t.type === 'earn').reduce((s, t) => s + t.amount, 0);
   const spent = childTransactions.filter((t) => t.type === 'spend').reduce((s, t) => s + t.amount, 0);
 
+  // Granted badges for this child
+  const childBadges = useMemo(
+    () => (childId ? badges.filter((b) => b.childId === childId) : []),
+    [badges, childId]
+  );
+  const badgeCount = childBadges.length;
+
+  // Recent unread badges (only show unseen ones)
+  const recentBadges = useMemo(
+    () => [...childBadges]
+      .filter((b) => !b.seen)
+      .sort((a, b) => new Date(b.grantedAt).getTime() - new Date(a.grantedAt).getTime())
+      .slice(0, 5),
+    [childBadges]
+  );
+
   return (
     <div className="flex-1 flex flex-col bg-sd-cream pb-4">
       {/* Top bar */}
@@ -181,12 +197,14 @@ export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: Chil
           <div className="flex gap-2 mt-3">
             <Stat label="Earned" value={`+${earned}`} color="text-sd-green-dk" />
             <Stat label="Spent" value={`−${spent}`} color="text-sd-coral-dk" />
-            <div className="flex-1 bg-white/70 rounded-[14px] py-2 px-2.5 text-center cursor-pointer relative" onClick={onStreakClick}>
-              <div className="font-body text-[10px] font-bold text-sd-ink-soft tracking-wider uppercase">Streak</div>
-              <div className="font-display text-lg font-bold text-sd-egg-dk">{streak}d 🔥</div>
-              <span className="absolute -top-1.5 -right-1.5 bg-sd-coral text-white font-display font-bold text-[9px] px-1.5 py-0.5 rounded-full leading-none animate-pop">
-                NEW
-              </span>
+            <div className="flex-1 bg-white/70 rounded-[14px] py-2 px-2.5 text-center cursor-pointer relative" onClick={onBadgesClick}>
+              <div className="font-body text-[10px] font-bold text-sd-ink-soft tracking-wider uppercase">Badges</div>
+              <div className="font-display text-lg font-bold text-sd-egg-dk">{badgeCount}</div>
+              {badgeCount === 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-sd-coral text-white font-display font-bold text-[9px] px-1.5 py-0.5 rounded-full leading-none animate-pop">
+                  NEW
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -246,6 +264,51 @@ export function ChildHome({ onLogTask, onWishes, onLogout, onStreakClick }: Chil
                 </div>
               );
             })}
+          </div>
+        </>
+      )}
+
+      {/* Recent Badges */}
+      {recentBadges.length > 0 && (
+        <>
+          <SectionTitle
+            right={
+              <button onClick={onBadgesClick} className="border-none bg-transparent font-display text-xs text-sd-coral-dk font-bold cursor-pointer">
+                View all
+              </button>
+            }
+          >
+            Badges received
+          </SectionTitle>
+          <div className="px-4 flex flex-col gap-2 pb-1">
+            {recentBadges.map((badge) => (
+              <div
+                key={badge.id}
+                className="bg-white rounded-[18px] p-3 flex items-center gap-3 border-2 border-sd-egg-lt shadow-[0_2px_0_rgba(200,180,60,0.15)]"
+              >
+                <div className="w-[42px] h-[42px] rounded-[14px] flex items-center justify-center overflow-hidden bg-sd-egg-lt">
+                  <Image
+                    src={`/badges/${badge.image}`}
+                    alt={badge.label}
+                    width={36}
+                    height={36}
+                    className="object-contain"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display font-bold text-sm text-sd-ink">{badge.label}</div>
+                  <div className="font-body text-xs text-sd-ink-soft mt-0.5">
+                    From {badge.grantedByName}
+                  </div>
+                </div>
+                <button
+                  onClick={onBadgesClick}
+                  className="border-none bg-sd-egg-lt text-sd-egg-dk font-display font-bold text-[11px] px-3 py-1.5 rounded-full cursor-pointer"
+                >
+                  View
+                </button>
+              </div>
+            ))}
           </div>
         </>
       )}
