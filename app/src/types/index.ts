@@ -112,6 +112,10 @@ export const BADGE_IMAGES = [
   { file: 'diplodocus.png', name: 'Diplodocus' },
   { file: 'dinosaur.png', name: 'Dinosaur' },
   { file: 'skull.png', name: 'Skull' },
+  { file: 'pterodactyl.gif', name: 'Pterodactyl' },
+  { file: 'egg.gif', name: 'Egg' },
+  { file: 'footprint.gif', name: 'Footprint' },
+  { file: 'skull.gif', name: 'Skull' },
 ] as const;
 
 // Activity item for combined history view
