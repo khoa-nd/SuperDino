@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { Card, Sheet, Stamp, BackHeader, FormField } from '@/components/ui';
+import { Card, Sheet, Stamp, FormField } from '@/components/ui';
 import { TextInput } from '@/components/ui/FormField';
 import { useStore } from '@/lib/store';
 import { getBadgesByMonth, getMonthLabel, currentMonth } from '@/lib/badges';
@@ -60,7 +60,10 @@ export function ParentBadges({ onBack, standalone }: ParentBadgesProps) {
   return (
     <div className="flex-1 flex flex-col bg-sd-cream">
       {standalone && (
-        <BackHeader title="Badges" subtitle="Grant badges to your kids" onBack={() => {}} />
+        <div className="px-4 pt-4 pb-2">
+          <div className="font-display font-bold text-2xl text-sd-ink">Badges</div>
+          <div className="font-body text-xs text-sd-ink-soft mt-0.5">Grant badges to your kids</div>
+        </div>
       )}
 
       <div className="flex-1 overflow-y-auto hide-scrollbar px-4 py-4 flex flex-col gap-4">
