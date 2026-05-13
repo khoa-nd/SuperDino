@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Egg, EggBadge, Pill, StatusPill, Stamp, ConfirmDialog } from '@/components/ui';
+import { Card, Egg, EggBadge, Pill, StatusPill, Stamp, ConfirmDialog, Sheet } from '@/components/ui';
 import { useStore } from '@/lib/store';
 import { formatRelativeTime } from '@/lib/utils';
 
@@ -14,6 +14,8 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
   const [tab, setTab] = useState<'pending' | 'catalog' | 'history'>('pending');
   const [wishAmounts, setWishAmounts] = useState<Record<string, number>>({});
   const [deleteWishId, setDeleteWishId] = useState<string | null>(null);
+  const [noteSheet, setNoteSheet] = useState<{ requestId: string; action: 'approve' | 'reject'; amount: number } | null>(null);
+  const [noteText, setNoteText] = useState('');
   const familyId = user?.familyId || 'f1';
   const familyWishes = wishes.filter((wish) => wish.familyId === familyId);
   const linkedKids = users.filter((u) => u.role === 'child' && u.familyId === familyId);
@@ -26,6 +28,22 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
   );
   const pendingReqs = familyWishRequests.filter((w) => w.status === 'pending');
   const historyReqs = familyWishRequests.filter((w) => w.status !== 'pending');
+
+  const handleConfirmNote = () => {
+    if (!noteSheet) return;
+    if (noteSheet.action === 'approve') {
+      approveWish(noteSheet.requestId, noteSheet.amount, noteText.trim() || undefined);
+    } else {
+      rejectWish(noteSheet.requestId, noteText.trim() || undefined);
+    }
+    setNoteSheet(null);
+    setNoteText('');
+  };
+
+  const openNoteSheet = (action: 'approve' | 'reject', requestId: string, amount: number) => {
+    setNoteSheet({ requestId, action, amount });
+    setNoteText('');
+  };
 
   return (
     <div className="flex flex-col bg-sd-cream">
@@ -132,10 +150,10 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
                 </div>
 
                 <div className="flex gap-2">
-                  <Stamp color="paper" size="sm" block loading={loadingAction === `reject-wish-${req.id}`} onClick={() => rejectWish(req.id)} className="text-sd-coral-dk">
+                  <Stamp color="paper" size="sm" block onClick={() => openNoteSheet('reject', req.id, currentAmount)} className="text-sd-coral-dk">
                     ✕ Reject
                   </Stamp>
-                  <Stamp color="coral" size="sm" block loading={loadingAction === `approve-wish-${req.id}`} onClick={() => approveWish(req.id, currentAmount)}>
+                  <Stamp color="coral" size="sm" block onClick={() => openNoteSheet('approve', req.id, currentAmount)}>
                     ✓ Grant{currentAmount !== wish.cost ? ` (${currentAmount > wish.cost ? '+' : ''}${currentAmount - wish.cost})` : ''}
                   </Stamp>
                 </div>
@@ -236,32 +254,81 @@ export function ParentWishes({ onAddWish }: ParentWishesProps) {
             return (
               <div
                 key={req.id}
-                className="
-                  bg-white rounded-[18px] p-3
-                  flex items-center gap-3
-                  border-2 border-[rgba(20,40,30,0.04)]
-                "
+                className="bg-white rounded-[18px] p-3 border-2 border-[rgba(20,40,30,0.04)]"
               >
-                <div
-                  className="w-[42px] h-[42px] rounded-[14px] flex items-center justify-center text-[22px]"
-                  style={{ background: wish.color }}
-                >
-                  {wish.emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-display font-bold text-sm text-sd-ink">{wish.name}</div>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <EggBadge count={wish.cost} size={12} />
-                    <StatusPill status={req.status} />
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-[42px] h-[42px] rounded-[14px] flex items-center justify-center text-[22px]"
+                    style={{ background: wish.color }}
+                  >
+                    {wish.emoji}
                   </div>
-                </div>
-                <div className="font-body text-[11px] text-sd-ink-mute">
-                  {formatRelativeTime(req.timestamp)}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display font-bold text-sm text-sd-ink">{wish.name}</div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <EggBadge count={wish.cost} size={12} />
+                      <StatusPill status={req.status} />
+                    </div>
+                    {req.note && (
+                      <div className="font-body text-[11px] text-sd-ink-soft italic mt-1">
+                        &ldquo;{req.note}&rdquo;
+                      </div>
+                    )}
+                  </div>
+                  <div className="font-body text-[11px] text-sd-ink-mute">
+                    {formatRelativeTime(req.timestamp)}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* Note input sheet */}
+      {noteSheet && (
+        <Sheet onClose={() => setNoteSheet(null)}>
+          <div className="px-5 pb-4">
+            <div className="font-display font-bold text-[22px] text-sd-ink mb-1">
+              {noteSheet.action === 'approve' ? 'Grant Wish' : 'Reject Wish'}
+            </div>
+            <div className="font-body text-xs text-sd-ink-soft mb-4">
+              {noteSheet.action === 'approve'
+                ? 'Add a note to let your kid know why this wish was granted (optional)'
+                : 'Let your kid know why this wish was not granted (optional)'}
+            </div>
+
+            <textarea
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Write a note for your kid…"
+              rows={4}
+              className="
+                w-full border-2 border-[rgba(20,40,30,0.08)] rounded-xl
+                px-3 py-2.5 font-body text-sm bg-white text-sd-ink
+                outline-none focus:border-sd-coral resize-none mb-4
+              "
+            />
+
+            <div className="flex gap-2.5">
+              <Stamp color="paper" block onClick={() => setNoteSheet(null)}>
+                Cancel
+              </Stamp>
+              <Stamp
+                color={noteSheet.action === 'approve' ? 'coral' : 'paper'}
+                block
+                loading={
+                  loadingAction === `approve-wish-${noteSheet.requestId}` ||
+                  loadingAction === `reject-wish-${noteSheet.requestId}`
+                }
+                onClick={handleConfirmNote}
+                className={noteSheet.action === 'reject' ? 'text-sd-coral-dk' : ''}
+              >
+                {noteSheet.action === 'approve' ? '✓ Grant' : '✕ Reject'}
+              </Stamp>
+            </div>
+          </div>
+        </Sheet>
       )}
     </div>
   );

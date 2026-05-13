@@ -231,6 +231,11 @@ export function ChildWishes({ onBack, onOpenWish }: ChildWishesProps) {
                     <span className="font-body text-[10px] text-sd-sky-dk font-semibold">Custom</span>
                   )}
                 </div>
+                {req.note && (
+                  <div className="font-body text-[11px] text-sd-ink-soft italic mt-1">
+                    &ldquo;{req.note}&rdquo;
+                  </div>
+                )}
               </div>
               <div className="font-body text-[11px] text-sd-ink-mute">
                 {formatRelativeTime(req.timestamp)}

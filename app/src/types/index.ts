@@ -64,6 +64,7 @@ export interface WishRequest {
   wishId: string;
   userId: string;
   status: WishRequestStatus;
+  note?: string;
   timestamp: string;
   wish?: Wish; // Joined data
 }

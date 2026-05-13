@@ -87,10 +87,10 @@ export const superdinoApi = {
   rejectTask: (input: { userId: string; logId: string }) =>
     request<AppSnapshot>({ action: 'rejectTask', ...input }),
 
-  approveWish: (input: { userId: string; requestId: string; amount?: number }) =>
+  approveWish: (input: { userId: string; requestId: string; amount?: number; note?: string }) =>
     request<AppSnapshot>({ action: 'approveWish', ...input }),
 
-  rejectWish: (input: { userId: string; requestId: string }) =>
+  rejectWish: (input: { userId: string; requestId: string; note?: string }) =>
     request<AppSnapshot>({ action: 'rejectWish', ...input }),
 
   cancelAssignedTask: (input: { userId: string; logId: string }) =>

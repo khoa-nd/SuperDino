@@ -30,7 +30,7 @@ type DbProfile = { id: string; username: string; name: string; role: UserRole; f
 type DbTask = { id: string; name: string; emoji: string; reward: number; category: TaskCategory; auto_approve: boolean; color: string; family_id: string; created_at: string };
 type DbWish = { id: string; name: string; emoji: string; cost: number; category?: WishCategory; color: string; family_id: string; created_at: string };
 type DbTaskLog = { id: string; task_id: string; user_id: string; status: TaskLogStatus; assigned_by?: string; timestamp: string };
-type DbWishRequest = { id: string; wish_id: string; user_id: string; status: WishRequestStatus; timestamp: string };
+type DbWishRequest = { id: string; wish_id: string; user_id: string; status: WishRequestStatus; note: string; timestamp: string };
 type DbTransaction = { id: string; user_id: string; type: 'earn' | 'spend'; amount: number; label: string; timestamp: string };
 type DbBadge = { id: string; child_id: string; granted_by_id: string; granted_by_name: string; image: string; label: string; month: string; week: number; message: string; seen: boolean; revoked: boolean; granted_at: string };
 
@@ -58,6 +58,7 @@ type RequestPayload = {
   week?: number;
   badgeId?: string;
   message?: string;
+  note?: string;
 };
 
 const id = () => `${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36)}`;
@@ -140,6 +141,7 @@ const mapWishRequest = (request: DbWishRequest): WishRequest => ({
   wishId: request.wish_id,
   userId: request.user_id,
   status: request.status,
+  note: request.note || undefined,
   timestamp: request.timestamp,
 });
 
@@ -614,7 +616,9 @@ export async function POST(request: Request) {
     if (action === 'approveWish' || action === 'rejectWish') {
       if (!payload.requestId) throw new Error('requestId is required');
       const status = action === 'approveWish' ? 'approved' : 'rejected';
-      await db.from('wish_requests').update({ status }).eq('id', payload.requestId);
+      const updates: Record<string, unknown> = { status };
+      if (payload.note) updates.note = payload.note;
+      await db.from('wish_requests').update(updates).eq('id', payload.requestId);
       if (action === 'approveWish') {
         const wishRequest = snapshot.wishRequests.find((item) => item.id === payload.requestId);
         const wish = wishRequest ? snapshot.wishes.find((item) => item.id === wishRequest.wishId) : null;

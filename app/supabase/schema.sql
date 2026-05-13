@@ -53,6 +53,7 @@ create table if not exists public.wish_requests (
   wish_id text not null references public.wishes(id) on delete cascade,
   user_id text not null references public.profiles(id) on delete cascade,
   status text not null check (status in ('pending', 'approved', 'rejected')),
+  note text not null default '',
   timestamp timestamptz not null default now()
 );
 

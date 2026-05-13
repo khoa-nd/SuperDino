@@ -163,8 +163,8 @@ interface AppState {
   rejectTask: (logId: string) => void;
   assignTask: (taskId: string, childId: string) => void;
   cancelAssignedTask: (logId: string) => void;
-  approveWish: (requestId: string, amount?: number) => void;
-  rejectWish: (requestId: string) => void;
+  approveWish: (requestId: string, amount?: number, note?: string) => void;
+  rejectWish: (requestId: string, note?: string) => void;
   createTask: (data: Omit<Task, 'id' | 'familyId' | 'createdAt'>) => void;
   createWish: (data: Omit<Wish, 'id' | 'familyId' | 'createdAt'>) => void;
   convertWishToNormal: (wishId: string) => void;
@@ -431,12 +431,12 @@ export const useStore = create<AppState>()(
         }
       },
 
-      approveWish: async (requestId, amount) => {
+      approveWish: async (requestId, amount, note) => {
         const state = get();
         if (!state.user) return;
         set({ loadingAction: `approve-wish-${requestId}` });
         try {
-          const snapshot = await superdinoApi.approveWish({ userId: state.user.id, requestId, amount });
+          const snapshot = await superdinoApi.approveWish({ userId: state.user.id, requestId, amount, note });
           set({ ...snapshotToState(snapshot), loadingAction: null });
         } catch (error) {
           set({ toast: getErrorMessage(error), loadingAction: null });
@@ -444,12 +444,12 @@ export const useStore = create<AppState>()(
         }
       },
 
-      rejectWish: async (requestId) => {
+      rejectWish: async (requestId, note) => {
         const userId = get().user?.id;
         if (!userId) return;
         set({ loadingAction: `reject-wish-${requestId}` });
         try {
-          const snapshot = await superdinoApi.rejectWish({ userId, requestId });
+          const snapshot = await superdinoApi.rejectWish({ userId, requestId, note });
           set({ ...snapshotToState(snapshot), loadingAction: null });
         } catch (error) {
           set({ toast: getErrorMessage(error), loadingAction: null });
